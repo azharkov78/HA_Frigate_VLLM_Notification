@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.54)
+  name: Frigate LLM Notification with Telegram (v0.55)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.54
+     Version: v 0.55
 
   domain: automation
   input:
@@ -289,7 +289,10 @@ blueprint:
               multiple: false
         custom_object_prompts:
           name: Custom Object Prompts
-          description: Define custom prompts for specific objects (e.g., '{"person": "Summarize person approaching camera...", "car": "Describe car movement..."}'). Leave empty to use default prompt.
+          description: >
+            Define custom prompts for specific objects as a JSON string (e.g., "{\"person\": \"Summarize any person approaching the camera in one sentence.\", \"car\": \"Describe the car's color and movement in one sentence.\"}"). 
+            Use {{ zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') }} as a placeholder for zone names. 
+            Leave empty (\"{}\") to use the default prompt.
           default: "{}"
           selector:
             text:
@@ -390,7 +393,10 @@ blueprint:
               multiple: false
         custom_object_prompts_clip:
           name: Custom Object Prompts for Clips
-          description: Define custom prompts for specific objects in video clips (e.g., '{"person": "Analyze person actions...", "car": "Describe car movement..."}'). Leave empty to use default prompt.
+          description: >
+            Define custom prompts for specific objects in video clips as a JSON string (e.g., "{\"person\": \"Analyze the actions of any person in one sentence.\", \"car\": \"Describe the car's movement and type in one sentence.\"}"). 
+            Use {{ zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') }} as a placeholder for zone names. 
+            Leave empty (\"{}\") to use the default prompt.
           default: "{}"
           selector:
             text:
