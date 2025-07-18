@@ -1,218 +1,403 @@
 blueprint:
-  name: Simplified Frigate LLM Notification with Telegram (v0.66)
-  author: whag (modified by Grok)
+  name: Frigate LLM Notification with Telegram (v0.43)
+  author: whag
   description: >
-    A simplified blueprint for Frigate notifications using Telegram and Home Assistant Companion App.
-    Monitors MQTT frigate/reviews topic for new and end events.
-    Does not require JSON parsing, making it compatible with all Home Assistant versions.
-    Stores snapshots and clips in a 'frigate' subdirectory of the downloader directory.
-    Supports Frigate, Downloader, LLM Vision, and Telegram integrations.
-    Tested on Android and Telegram.
+     Basic requirements:<br />
+     - Home Assistant with an MQTT broker setup. <br />
+     - Frigate integration with MQTT setup. <br />
+     Link: https://github.com/blakeblackshear/frigate-hass-integration <br />
+     - LLM Vision integration with provider setup. <br />
+     Link: https://github.com/valentinfrlch/ha-llmvision <br />
+     - Downloader integration. <br />
+     Link: https://www.home-assistant.io/integrations/downloader/<br /><br />
+     
+     Information:<br />
+     - Only suitable for one Frigate camera, use multiple instances of this automation for multiple cameras if required. <br />
+     - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br /><br />
+     Description: <br />
+     Use LLM Vision to analyse frigate snapshots and clips and send notifications via the Home Assistant companion app and Telegram. <br />
+     Monitors MQTT frigate/reviews topic of types [new],[update] and [end]. <br />
+     The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability for usingh LLM Vision with Frigate.
+     Note that the downloader folder will need maintained separately (i.e. old files deleted or backed up). This can be achieved automatically via a shell command or similar <br />
+     This automation runs in parallel mode. <br /><br />
+     Tested on Android only. <br /><br />
+     
+     Variables which may be useful for the custom message and AI prompts
+       - {{input_objects}} = Objects required<br />
+       - {{objects}} = Objects found<br />
+       - {{input_camera_name}} = Camera required<br />
+       - {{camera_name}} = Camera triggered<br />
+       - {{zone_names}} = Zones required<br />
+       - {{before_zones}} = Zones triggered first<br />
+       - {{after_zones}} = Zones triggered last<br />
+       - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
+       - {{detections{1] = Event ID 2<br />
 
-    Requirements:
-    - Home Assistant with MQTT broker setup.
-    - Frigate integration with MQTT setup[](https://github.com/blakeblackshear/frigate-hass-integration).
-    - LLM Vision integration for image/video analysis[](https://github.com/valentinfrlch/ha-llmvision).
-    - Downloader integration[](https://www.home-assistant.io/integrations/downloader/).
-    - Telegram Bot integration[](https://www.home-assistant.io/integrations/telegram_bot/).
-
-    Features:
-    - Text-based input for objects and zones to avoid JSON parsing.
-    - Simple template conditions for object and zone matching.
-    - Supports multiple cameras, LLM Vision analysis, and Telegram notifications.
-    - Customizable notification messages and titles.
-    - Stores files in downloader/frigate/ subdirectory.
-    - Parallel execution for performance.
-
-    Version: v0.66
+     Version: v 0.43
 
   domain: automation
   input:
     frigate:
       name: Frigate Options
       icon: mdi:cog
-      description: Configure Frigate-related settings
+      description: Frigate options
       collapsed: true
       input:
         in_camera:
-          name: Frigate Cameras
-          description: Select one or more Frigate cameras to monitor.
+          name: Frigate Camera
+          description: Frigate cameras only
           selector:
             entity:
-              multiple: true
+              multiple: false
               filter:
                 - integration: frigate
                   domain: camera
-        in_objects:
-          name: Required Objects
-          description: Comma-separated list of objects to detect (e.g., person,car). Leave empty to detect all objects.
-          default: ""
+        in_severity:
+          name: Severity
+          description: Frigate event severity.
+          default: 
+            - alert
+            - detection
           selector:
-            text:
-              multiline: false
+            select:
+              options:
+                - label: Alert
+                  value: alert
+                - label: Detection
+                  value: detection
+              multiple: true
         in_zones:
-          name: Required Zones
-          description: Comma-separated list of zones to monitor (e.g., front_porch,backyard). Leave empty for any zone.
-          default: ""
-          selector:
-            text:
-              multiline: false
-        in_host:
-          name: Home Assistant URL
-          description: Home Assistant URL (e.g., http://192.168.1.100:8123).
-          default: http://192.168.1.1:8123
-          selector:
-            text:
-              multiline: false
-    llm:
-      name: LLM Vision Options
-      icon: mdi:cog
-      description: Configure LLM Vision for image/video analysis
-      collapsed: true
-      input:
-        provider:
-          name: Provider
-          description: LLM Vision provider for analysis.
-          selector:
-            config_entry:
-              integration: llmvision
-        model:
-          name: AI Model
-          description: AI model for vision analysis.
-          default: gemini-1.5-flash
-          selector:
-            select:
-              options:
-                - gemini-1.5-flash
-                - gpt-4o
-                - gpt-4o-mini
-                - claude-3-5-sonnet-latest
-              multiple: false
-              custom_value: true
-        use_llm_image:
-          name: Use LLM for Snapshot
-          description: Enable LLM Vision for snapshot analysis.
-          default: true
-          selector:
-            boolean: {}
-        image_prompt:
-          name: Snapshot Prompt
-          description: Prompt for snapshot analysis.
-          default: "Summarize the image in one sentence, focusing on detected objects in the specified area."
-          selector:
-            text:
-              multiline: true
-        use_llm_clip:
-          name: Use LLM for Clip
-          description: Enable LLM Vision for video clip analysis.
-          default: false
-          selector:
-            boolean: {}
-        clip_prompt:
-          name: Clip Prompt
-          description: Prompt for video clip analysis.
-          default: "Analyze the video clip and describe the actions of detected objects in one sentence."
-          selector:
-            text:
-              multiline: true
-    downloader:
-      name: Downloader Options
-      icon: mdi:cog
-      description: Configure file download settings
-      collapsed: true
-      input:
-        download_dir:
-          name: Downloader Directory
-          description: Root directory for downloaded snapshots and clips (subdirectory 'frigate' will be used).
-          default: downloader
-          selector:
-            text:
-              multiline: false
-        download_image_wait:
-          name: Image Download Wait Time
-          description: Maximum wait time (seconds) for snapshot download.
-          default: 5
-          selector:
-            number:
-              min: 1
-              max: 120
-              step: 1
-              mode: slider
-        download_clip_wait:
-          name: Clip Download Wait Time
-          description: Maximum wait time (seconds) for clip download.
-          default: 30
-          selector:
-            number:
-              min: 1
-              max: 120
-              step: 1
-              mode: slider
-    telegram:
-      name: Telegram Notification Options
-      icon: mdi:telegram
-      description: Configure Telegram notifications
-      collapsed: true
-      input:
-        telegram_chat_id:
-          name: Telegram Chat ID
-          description: Telegram chat ID (e.g., @YourChannel or user ID).
-          default: ""
-          selector:
-            text:
-              multiline: false
-        telegram_parse_mode:
-          name: Telegram Parse Mode
-          description: Message formatting (MarkdownV2, HTML, or None).
-          default: ""
-          selector:
-            select:
-              options:
-                - label: None
-                  value: ""
-                - label: MarkdownV2
-                  value: MarkdownV2
-                - label: HTML
-                  value: HTML
-              mode: dropdown
-        telegram_silent:
-          name: Silent Notification
-          description: Send Telegram notifications without sound.
-          default: false
-          selector:
-            boolean: {}
-    notify:
-      name: Notification Options
-      icon: mdi:bell
-      description: Configure Home Assistant Companion App notifications
-      collapsed: true
-      input:
-        notify_devices:
-          name: Notify Devices
-          description: Devices to send notifications to via Companion App.
+          name: Frigate Zones
+          description: Zones required for the alert. Filter will show all frigate devices(zones and cameras.)
           default: []
           selector:
             device:
               multiple: true
               filter:
-                - integration: mobile_app
-        notification_title:
-          name: Notification Title
-          description: Title for notifications.
-          default: "{{ camera_name }} Alert"
+                - integration: frigate
+              entity:
+                - domain: binary_sensor
+        in_custom_zones:
+          name: Custom zones
+          description: Add any custom zones not shown in the above selector.
+          default: []
           selector:
             text:
               multiline: false
-        notification_message:
-          name: Notification Message
-          description: Message for notifications.
-          default: "Detected {{ objects }} in {{ zones }}."
+              multiple: true
+        in_all_zones:
+          name: All Zones
+          description: All zones have to be entered before processing rather than any.
+          default: false
+          selector:
+            boolean: {}
+        in_objects:
+          name: Required Objects
+          description: Frigate objects required in the selected zones if any.
+          default: []
+          selector:
+            select:
+              multiple: true
+              custom_value: true
+              options:
+                - person
+                - bicycle
+                - car
+                - motorcycle
+                - airplane
+                - bus
+                - train
+                - car
+                - boat
+                - traffic light
+                - fire hydrant
+                - street sign
+                - stop sign
+                - parking meter
+                - bench
+                - bird
+                - cat
+                - dog
+                - horse
+                - sheep
+                - cow
+                - elephant
+                - bear
+                - zebra
+                - giraffe
+                - hat
+                - backpack
+                - umbrella
+                - shoe
+                - eye glasses
+                - handbag
+                - tie
+                - suitcase
+                - frisbee
+                - skis
+                - snowboard
+                - sports ball
+                - kite
+                - baseball bat
+                - baseball glove
+                - skateboard
+                - surfboard
+                - tennis racket
+                - bottle
+                - plate
+                - wine glass
+                - cup
+                - fork
+                - knife
+                - spoon
+                - bowl
+                - banana
+                - apple
+                - sandwich
+                - orange
+                - broccoli
+        in_sub_labels:
+          name: Sub Labels Required
+          description: Frigate sub labels required in the selected zones if any.
+          default: []
+          selector:
+            text:
+              multiline: false
+              multiple: true
+        in_host:
+          name: Home Assistant IP Address.
+          description: Home Assistant ip address.
+          default: http://192.168.1.1:8123
+          selector:
+            text:
+              multiline: false
+              multiple: false
+    llm:
+      name: LLM Vision Provider / Model
+      icon: mdi:cog
+      description: LLM Vision options
+      collapsed: true
+      input:
+        provider:
+          name: Provider
+          description: Provider to use for analysis.
+          selector:
+            config_entry:
+              integration: llmvision
+        model:
+          name: AI Model
+          description: AI Model
+          default: gemini-1.5-flash
+          selector:
+            select:
+              options: 
+              - gpt-4o
+              - gpt-4o-mini
+              - gpt-4.1
+              - claude-3-7-sonnet-latest
+              - claude-3-5-sonnet-latest
+              - claude-3-5-haiku-latest
+              - claude-sonnet-4-20250514
+              - claude-opus-4-20250514
+              - gemini-1.5-flash
+              - gemini-1.5-pro
+              - gemini-2.0-flash
+              - gemini-2.0-flash-lite
+              - gemini-2.5-pro
+              - gemini-2.5-flash
+              - llama-3.2-90b-vision-preview
+              - llama-3.2-11b-vision-preview
+              - Llama-4-Scout-17B-16E-Instruct-FP8
+              - Llama-4-Maverick-17B-128E-Instruct-FP8
+              multiple: false
+              custom_value: true
+              
+    image_analyse:
+      name: Snapshot Analyse
+      icon: mdi:cog
+      description: Frigate event snapshot analyse options
+      collapsed: true
+      input:
+        in_title_image:
+          name: No AI Notification Title
+          description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert"
+          selector:
+            text:
+        in_custom_msg:
+          name: No AI Notification Message
+          description: Inital notificaion message if not using LLM Vision for the snapshot analysis.
+          default: "A {{objects| join(' and a ')|replace('_', ' ')}} was detected in the {{after_zones| join(' and the ')|replace('_', ' ' )}}" 
           selector:
             text:
               multiline: true
-        cooldown:
-          name: Cooldown
-          description: Time (minutes) to wait before sending another notification.
+              multiple: false
+        in_use_llm_image:
+          name: LLM Vision Snapshot
+          description: Use LLM Vision for intial snapshot analysis. If off then the custom message above will be used to generate the notification.
+          default: true
+          selector:
+            boolean: {}
+        prompt:
+          name: Prompt 
+          description: Model prompt.
+          default: Summarise the image in a 1 sentence response,
+                   concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
+                   the {{zone_names| join(' and ,')|replace('_',' ')}}. 
+                   Any person approaching the camera should take priority over all other events.
+                   If you see a known person from memory, mention this in the response.
+                   Do not mention the prompt or describe the environment in your response.
+                   The response is an intial alert for a mobile phone security notification. 
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        target_width: 
+          name: Pixels  
+          description: Width in pixels to downscale.
+          default: 1080
+          selector:
+            number:
+               min: 512
+               max: 1920
+               step: 10
+               mode: slider
+        tokens: 
+          name: Tokens 
+          description: Maximum number of tokens to generate.
+          default: 100
+          selector:
+            number:
+               min: 1
+               max: 300
+               step: 1
+               mode: slider
+        in_gen_title:
+          name: Generate Title
+          description: AI generated notification title.
+          default: false
+          selector:
+            boolean: {}
+        use_memory:
+          name: Use Memory 
+          description: Use information stored in memory to provide additional context.
+            Memory must be setup in LLM Vision.
+          default: false
+          selector:
+            boolean: {}
+        use_remember:
+          name: Use Remember 
+          description: Store this event in the timeline. 
+            Timeline must be setup in LLM Vision.
+          default: false
+          selector:
+            boolean: {}
+        expose_image:
+          name: Expose Image
+          description: Save image in llmvision for Timeline. 
+            Timeline must be setup in LLM Vision.
+          default: false
+          selector:
+            boolean: {}
+        delay_image:
+          name: Delay Before Image
+          description: Delay in seconds before processing Frigate snapshot.
+          default: 2
+          selector: 
+            number:
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+              
+    clip_analyse:
+      name: Review Clip Analyse
+      icon: mdi:cog
+      collapsed: true
+      description: Frigate review clip analyse options
+      input:
+        in_title_clip:
+          name: No AI Notification Title
+          description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert Update"
+          selector:
+            text:
+              multiline: false
+              multiple: false
+        prompt2:
+          name: Prompt 
+          description: Model prompt.
+          default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
+                   The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
+                   Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
+                   Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
+                   Do not mention the prompt or describe the environment in your response.  
+                   Your response will be used for a mobile phone notification message with the clip attached.
+                  
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        target_width2: 
+          name: Pixels 
+          description: Width in pixels to downscale.
+          default: 1080
+          selector:
+            number:
+               min: 512
+               max: 1920
+               step: 10
+               mode: slider
+        tokens2: 
+          name: Tokens 
+          description: Maximum number of tokens to generate.
+          default: 100
+          selector:
+            number:
+               min: 1
+               max: 300
+               step: 1
+               mode: slider
+        max_frames:
+          name: Max Frames
+          description: How many frames to analyse for clip.
+          default: 3
+          selector:
+            number:
+               min: 1
+               max: 10
+               step: 1
+               mode: slider
+        in_gen_title2:
+          name: Generate Title
+          description: AI generated clip title.
+          default: false
+          selector:
+            boolean: {}
+        use_memory2:
+          name: Use Memory
+          description: Use information stored in memory to provide additional context.
+            Memory must be setup in LLM Vision.
+          default: false
+          selector:
+            boolean: {}
+        use_remember2:
+          name: Use Remember
+          description: Store this event in the timeline. 
+            Timeline must be setup in LLM Vision.
+          default: false
+          selector:
+            boolean: {}
+        expose_clip:
+          name: Expose Clip
+          description: Save clip in llmvision for Timeline. 
+            Timeline must be setup in LLM Vision.
+          default: false
+          selector:
+            boolean: {}
+        delay_clip:
+          name: Delay Before Clip
+          description: Time in seconds before processing the Frigate clip.
           default: 2
           selector:
             number:
@@ -221,242 +406,606 @@ blueprint:
               step: 1
               mode: slider
 
+              
+    Downloader:
+      name: Downloader Options
+      icon: mdi:cog
+      collapsed: true
+      input:
+        in_downloader:
+          name: Downloader Directory 
+          description: Downloader integration root directory.
+          default: downloader
+          selector:
+            text:
+              multiline: false
+              multiple: false
+        in_downloader_sub:
+          name: Downloader Sub Directory
+          description: Define a sub directory within your downloader root directory.
+          default: 
+          selector:
+            text:
+              multiline: false
+              multiple: false
+        download_image_wait:
+          name: Image Download Max Wait Time
+          description: Maximum time to wait in seconds for the frigate image to be downloaded before retrying download.
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              mode: slider
+        download_clip_wait:
+          name: Clip Download Max Wait Time
+          description: Maximum time to wait in seconds for the frigate clip to be downloaded before retrying download.
+          default: 30
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              mode: slider
+              
+    notify:
+      name: Notification Options
+      icon: mdi:bell
+      collapsed: true
+      input:
+        in_notify_devices:
+          name: Notify Devices
+          description: The devices to send the notification to. Multiple devices may be
+            used. Only works with Home Assistant Companion mobile app.
+          default: []
+          selector:
+            device:
+              multiple: true
+              filter:
+              - integration: mobile_app
+        in_telegram_notify:
+          name: Telegram Notification Service
+          description: Select Telegram notification service to use
+          default: []
+          selector:
+            entity:
+              domain: notify
+              multiple: false
+              filter:
+                integration: telegram_bot
+        click_action1:
+          name: Click Action New Event 
+          description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
+          default: /lovelace
+          selector:
+            select:
+              options:
+              - label: Lovelace URL
+                value: /Lovelace
+              - label: View Snapshot
+                value: "{{image}}"
+              - label: View Clip
+                value: "{{video}}"
+              - label: View Thumbnail
+                value: "{{thumb}}"
+              - label: View Snapshot with bounding box
+                value: "{{image}}?bbox=1"
+              - label: View Review GIF
+                value: "{{gif}}"
+              mode: dropdown
+              custom_value: true
+              
+        click_action2:
+          name: Click Action End Event 
+          description: Notification Click Action For End Event Notification . Default used is a Lovelace URL.
+          default: /lovelace
+          selector:
+            select:
+              options:
+              - label: Lovelace URL
+                value: /Lovelace
+              - label: View Snapshot
+                value: "{{image}}"
+              - label: View Clip
+                value: "{{video}}"
+              - label: View Thumbnail
+                value: "{{thumb}}"
+              - label: View Snapshot with bounding box
+                value: "{{image}}?bbox=1"
+              - label: View Review GIF
+                value: "{{gif}}"
+              mode: dropdown
+              custom_value: true
+              
+        cooldown:
+          name: Cooldown
+          description: Time in minutes to wait before running this automation again.
+          default: 2
+          selector:
+            number:
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+    telegram_prompts:
+      name: Telegram Prompts
+      icon: mdi:robot
+      collapsed: true
+      input:
+        person_prompt:
+          name: Person Prompt
+          description: Custom prompt for person detection
+          default: "🚨 Person detected in {{after_zones| join(' and the ')|replace('_', ' ')}}! Please check the camera {{camera_name}}."
+          selector:
+            text:
+              multiline: true
+        car_prompt:
+          name: Car Prompt
+          description: Custom prompt for car detection
+          default: "🚗 Car detected in {{after_zones| join(' and the ')|replace('_', ' ')}} on camera {{camera_name}}."
+          selector:
+            text:
+              multiline: true
+        cat_prompt:
+          name: Cat Prompt
+          description: Custom prompt for cat detection
+          default: "🐱 Cat spotted in {{after_zones| join(' and the ')|replace('_', ' ')}} on camera {{camera_name}}."
+          selector:
+            text:
+              multiline: true
+        dog_prompt:
+          name: Dog Prompt
+          description: Custom prompt for dog detection
+          default: "🐶 Dog detected in {{after_zones| join(' and the ')|replace('_', ' ')}} on camera {{camera_name}}."
+          selector:
+            text:
+              multiline: true
+        bird_prompt:
+          name: Bird Prompt
+          description: Custom prompt for bird detection
+          default: "🐦 Bird detected in {{after_zones| join(' and the ')|replace('_', ' ')}} on camera {{camera_name}}."
+          selector:
+            text:
+              multiline: true
+        default_prompt:
+          name: Default Prompt
+          description: Default prompt for other objects
+          default: "⚠️ {{objects| join(' and a ')|replace('_', ' ')}} detected in {{after_zones| join(' and the ')|replace('_', ' ')}} on camera {{camera_name}}."
+          selector:
+            text:
+              multiline: true
+    Actions:
+      name: Custom Actions
+      icon: mdi:bell
+      collapsed: true
+      input:
+        in_action1:
+          name: New Event Custom Actions
+          description: Custom action to run on new event.
+          default: []
+          selector:
+            action: {}
+        in_action2:
+          name: End Event Custom Actions
+          description: Custom action to run on end event.
+          default: []
+          selector:
+            action: {}
+
 triggers:
   - trigger: mqtt
-    topic: frigate/reviews
+    topic: "{{frigate_topic}}"
     payload: new
-    value_template: "{{ value_json['type'] }}"
-    id: new_event
+    value_template: "{{value_json['type']}}"
+    id: New event
   - trigger: mqtt
-    topic: frigate/reviews
+    topic: "{{frigate_topic}}"
     payload: end
-    value_template: "{{ value_json['type'] }}"
-    id: end_event
-
+    value_template: "{{value_json['type']}}"
+    id: End event
 conditions:
   - condition: template
-    value_template: "{{ camera in input_camera_name }}"
-    alias: Camera Match
+    value_template: "{{camera_match}}"
+    alias: Valid Camera
   - condition: template
-    value_template: "{{ input_objects == '' or objects | lower in input_objects | lower }}"
-    alias: Object Match
+    value_template: "{{objects_match}}"
+    alias: Object Matched
   - condition: template
-    value_template: "{{ input_zones == '' or zones | lower in input_zones | lower }}"
-    alias: Zone Match
-
+    value_template: "{{sub_labels_match}}"
+    alias: Sub Label Matched
+  - condition: template
+    value_template: "{{zone_match}}"
+    alias: Valid Zone
+  - condition: template
+    value_template: "{{severity_match}}"
+    alias: Valid Alert
 actions:
   - action: logbook.log
     metadata: {}
     data:
-      name: Simplified Frigate Notification Log
-      message: >
-        Event type: {{ event_type }}
-        Camera: {{ camera_name }}
-        Objects: {{ objects }}
-        Zones: {{ zones }}
-        Notification devices: {{ notify_names }}
-        Telegram chat ID: {{ telegram_chat_id }}
-        Download directory: {{ download_dir }}/frigate/
-  - alias: Handle New Event
+      name: LLM Vision Frigate Notification log
+      entity_id: "{{this.entity_id}}"
+      message: >-
+        Event type: {{type}} /n
+        Review id: {{review_id}} /n
+        Input camera: {{input_camera}} /n
+        Camera triggered: {{input_camera_name}} /n  
+        Detections ID's: {{detections}} /n 
+        Detection 1 ID: {{id}} /n 
+        Objects required: {{input_objects}} /n 
+        Objects found: {{objects}} /n
+        Object match: {{objects_match}} /n
+        Sub Labels required: {{input_sub_labels}} /n
+        Sub Labels found: {{sub_labels}} /n
+        Sub Labels match: {{sub_labels_match}} /n
+        Zones required: {{zone_names}} /n
+        Zones triggered: {{after_zones}} /n
+        Zone match: {{zone_match}} /n 
+        Notify devices: {{notify_names}} /n
+        Telegram notify: {{telegram_notify}} /n
+        Downloader root: {{root_dir}} /n
+        Downloader sub: {{sub_dir}} /n
+        Thumb url {{thumb}} /n
+        Snapshot url {{image}}  /n 
+        Clip url {{video}} /n
+        GIF url {{gif}}
+  - alias: Event is new or update Do LLM image analysis and send notification
     if:
       - condition: trigger
-        id: new_event
+        id:
+          - New event
     then:
       - delay:
+          hours: 0
+          minutes: 0
           seconds: 2
+          milliseconds: 0
       - parallel:
-          - alias: Download and Process Snapshot
-            repeat:
-              sequence:
-                - action: downloader.download_file
-                  continue_on_error: true
-                  data:
-                    overwrite: true
-                    url: "{{ host }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-                    subdir: "frigate"
-                    filename: "{{ event_id }}_snapshot.jpg"
-                - wait_for_trigger:
-                    - trigger: event
-                      event_type: downloader_download_completed
-                      event_data:
-                        url: "{{ host }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-                        filename: "{{ event_id }}_snapshot.jpg"
-                      id: image_exists
-                  timeout:
-                    seconds: !input download_image_wait
-                  continue_on_timeout: true
-                - if:
-                    - condition: template
-                      value_template: "{{ wait.trigger.id == 'image_exists' }}"
-                  then:
-                    - if:
-                        - condition: template
-                          value_template: "{{ use_llm_image }}"
-                      then:
-                        - action: llmvision.image_analyzer
+        - alias: Run Custom Actions New 
+          choose:
+            - conditions: "{{action1|length != 0}}"
+              sequence: !input in_action1
+        - alias: Repeat Until file exists or 2 retries
+          repeat:
+            sequence:
+              - action: downloader.download_file
+                continue_on_error: true
+                metadata: {}
+                data:
+                  overwrite: true
+                  url: "{{host}}{{image}}"
+                  subdir: "{{sub_dir}}"
+                  filename: "{{id}}_snapshot.jpg"
+              - alias: Wait for downloader to complete
+                wait_for_trigger:
+                  - trigger: event
+                    event_type: downloader_download_completed
+                    event_data:
+                      url: "{{host}}{{image}}"
+                      filename: "{{id}}_snapshot.jpg"
+                    id: image_exists
+                continue_on_timeout: true
+                timeout:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input download_image_wait
+                  milliseconds: 0
+              - alias: If file exists run LLM Image Analyzer and send notification
+                if:
+                  - condition: template
+                    value_template: "{{ wait.trigger.id == 'image_exists' }}"
+                then:
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: !input delay_image
+                      milliseconds: 0
+                  - if:
+                      - condition: template
+                        value_template: "{{use_llm_image}}"
+                    then:
+                      - action: llmvision.image_analyzer
+                        data:
+                          provider: !input provider
+                          model: !input model
+                          remember: !input use_remember
+                          expose_images: !input expose_image
+                          use_memory: !input use_memory
+                          image_file: "{{image_local}}"
+                          message: !input prompt
+                          include_filename: false
+                          target_width: !input target_width
+                          max_tokens: !input tokens
+                          #temperature: !input temperature
+                          generate_title: "{{gen_title}}"
+                        response_variable: response
+                      - delay:
+                          hours: 0
+                          minutes: 0
+                          seconds: 5
+                          milliseconds: 0
+                      - variables:
+                          title: "{{response.response_title if gen_title else title_image}}"
+                          msg: "{{response.response_text}}"
+                          
+                    else:
+                      - variables:
+                          title: "{{title_image}}"
+                          msg: "{{custom_msg}}"
+                  - alias: Send Intial notification to notify devices
+                    repeat:
+                      for_each: "{{notify_names}}"
+                      sequence:
+                        - action: notify.{{ repeat.item }}
                           data:
-                            provider: !input provider
-                            model: !input model
-                            image_file: "{{ download_dir }}/frigate/{{ event_id }}_snapshot.jpg"
-                            message: !input image_prompt
-                            target_width: 1080
-                            max_tokens: 100
-                          response_variable: llm_response
-                        - variables:
-                            title: "{{ llm_response.response_title | default(notification_title) }}"
-                            message: "{{ llm_response.response_text | default(notification_message) }}"
-                      else:
-                        - variables:
-                            title: !input notification_title
-                            message: !input notification_message
-                    - repeat:
-                        for_each: "{{ notify_names }}"
-                        sequence:
-                          - action: notify.{{ repeat.item }}
+                            title: "{{title}}"
+                            message: "{{msg}}"
                             data:
-                              title: "{{ title }}"
-                              message: "{{ message }}"
-                              data:
-                                image: "{{ host }}/api/frigate/notifications/{{ event_id }}/thumbnail.jpg"
-                                group: "{{ camera }}-frigate-notification"
-                                tag: "{{ event_id }}"
-                                priority: high
-                    - if:
-                        - condition: template
-                          value_template: "{{ telegram_chat_id != '' }}"
-                      then:
-                        - action: telegram_bot.send_photo
+                              image: "{{thumb}}"
+                              entity_id: "{{input_camera}}"
+                              url: !input click_action1
+                              clickAction: !input click_action1
+                              group: "{{camera}}-frigate-notification"
+                              tag: "{{id}}"
+                              ttl: 0
+                              priority: high
+                  - alias: Send Telegram notification
+                    if:
+                      - condition: template
+                        value_template: "{{telegram_notify != ''}}"
+                    then:
+                      - variables:
+                          telegram_message: >-
+                            {% if 'person' in objects %}
+                              {{person_prompt}}
+                            {% elif 'car' in objects %}
+                              {{car_prompt}}
+                            {% elif 'cat' in objects %}
+                              {{cat_prompt}}
+                            {% elif 'dog' in objects %}
+                              {{dog_prompt}}
+                            {% elif 'bird' in objects %}
+                              {{bird_prompt}}
+                            {% else %}
+                              {{default_prompt}}
+                            {% endif %}
+                      - action: notify.notify
+                        target:
+                          service: "{{telegram_notify}}"
+                        data:
+                          message: "{{telegram_message}}"
                           data:
-                            chat_id: !input telegram_chat_id
-                            url: "{{ host }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-                            caption: "{{ title }}\n{{ message }}"
-                            parse_mode: !input telegram_parse_mode
-                            disable_notification: !input telegram_silent
-                - delay:
-                    minutes: !input cooldown
-              until:
-                - condition: template
-                  value_template: "{{ wait.trigger.id == 'image_exists' or repeat.index == 2 }}"
-  - alias: Handle End Event
+                            photo:
+                              - url: "{{host}}{{thumb}}"
+                                caption: "{{telegram_message}}"
+              - delay:
+                  hours: 0
+                  minutes: !input cooldown
+                  seconds: 0
+                  milliseconds: 0
+                alias: Cooldown
+            until:
+              - condition: template
+                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
+  - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
-        id: end_event
+        id:
+          - End event
     then:
       - delay:
+          hours: 0
+          minutes: 0
           seconds: 5
+          milliseconds: 0
       - parallel:
-          - alias: Download and Process Clip
-            repeat:
-              sequence:
-                - action: downloader.download_file
-                  continue_on_error: true
-                  data:
-                    overwrite: true
-                    url: "{{ host }}/api/frigate/notifications/{{ event_id }}/{{ camera }}/clip.mp4"
-                    subdir: "frigate"
-                    filename: "{{ event_id }}_clip.mp4"
-                - wait_for_trigger:
-                    - trigger: event
-                      event_type: downloader_download_completed
-                      event_data:
-                        url: "{{ host }}/api/frigate/notifications/{{ event_id }}/{{ camera }}/clip.mp4"
-                        filename: "{{ event_id }}_clip.mp4"
-                      id: clip_exists
-                  timeout:
-                    seconds: !input download_clip_wait
-                  continue_on_timeout: true
-                - if:
-                    - condition: template
-                      value_template: "{{ wait.trigger.id == 'clip_exists' }}"
-                  then:
-                    - if:
-                        - condition: template
-                          value_template: "{{ use_llm_clip }}"
-                      then:
-                        - action: llmvision.video_analyzer
+        - alias: Run Custom Actions End 
+          choose:
+            - conditions: "{{action2|length != 0}}"
+              sequence: !input in_action2
+        - repeat:
+            sequence:
+              - action: downloader.download_file
+                continue_on_error: true
+                metadata: {}
+                data:
+                  overwrite: true
+                  url: "{{host}}{{video}}"
+                  subdir: "{{sub_dir}}"
+                  filename: "{{id}}_clip.mp4"
+              - alias: Wait for downloader to complete
+                wait_for_trigger:
+                  - trigger: event
+                    event_type: downloader_download_completed
+                    event_data:
+                      url: "{{host}}{{video}}"
+                      filename: "{{id}}_clip.mp4"
+                    id: clip_exists
+                continue_on_timeout: true
+                timeout:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input download_clip_wait
+                  milliseconds: 0
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input delay_clip
+                  milliseconds: 0
+              - if:
+                  - condition: template
+                    value_template: "{{wait.trigger.id == 'clip_exists'}}"
+                then:
+                  - action: llmvision.video_analyzer
+                    metadata: {}
+                    data:
+                      provider: !input provider
+                      model: !input model
+                      remember: !input use_remember2
+                      expose_images: !input expose_clip
+                      use_memory: !input use_memory2
+                      video_file: "{{video_local}}"
+                      max_frames: !input max_frames
+                      include_filename: false
+                      target_width: !input target_width2
+                      max_tokens: !input tokens2
+                      #temperature: !input temperature2
+                      generate_title: "{{gen_title2}}"
+                      message: !input prompt2
+  
+                    response_variable: response
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 1
+                      milliseconds: 0
+                  - alias: Update notification to notify devices
+                    repeat:
+                      for_each: "{{notify_names}}"
+                      sequence:
+                        - action: notify.{{ repeat.item }}
                           data:
-                            provider: !input provider
-                            model: !input model
-                            video_file: "{{ download_dir }}/frigate/{{ event_id }}_clip.mp4"
-                            message: !input clip_prompt
-                            target_width: 1080
-                            max_tokens: 100
-                            max_frames: 3
-                          response_variable: llm_response
-                        - variables:
-                            title: "{{ llm_response.response_title | default(notification_title) }}"
-                            message: "{{ llm_response.response_text | default(notification_message) }}"
-                      else:
-                        - variables:
-                            title: "{{ notification_title }} Update"
-                            message: !input notification_message
-                    - repeat:
-                        for_each: "{{ notify_names }}"
-                        sequence:
-                          - action: notify.{{ repeat.item }}
+                            title: "{{response.title if gen_title2 else title_clip}}"
+                            message: "{{response.response_text}}"
                             data:
-                              title: "{{ title }}"
-                              message: "{{ message }}"
-                              data:
-                                video: "{{ host }}/api/frigate/notifications/{{ event_id }}/review_preview.gif"
-                                group: "{{ camera }}-frigate-notification"
-                                tag: "{{ event_id }}"
-                                priority: high
-                    - if:
-                        - condition: template
-                          value_template: "{{ telegram_chat_id != '' }}"
-                      then:
-                        - action: telegram_bot.send_video
+                              video: "{{gif}}"
+                              image: "{{gif}}"
+                              entity_id: "{{input_camera}}"
+                              url: !input click_action2
+                              clickAction: !input click_action2
+                              group: "{{camera}}-frigate-notification"
+                              tag: "{{id}}"
+                              interruption-level: active
+                              ttl: 0
+                              priority: high
+                  - alias: Send Telegram update
+                    if:
+                      - condition: template
+                        value_template: "{{telegram_notify != ''}}"
+                    then:
+                      - variables:
+                          telegram_message: "{{response.response_text}}"
+                      - action: notify.notify
+                        target:
+                          service: "{{telegram_notify}}"
+                        data:
+                          message: "{{telegram_message}}"
                           data:
-                            chat_id: !input telegram_chat_id
-                            url: "{{ host }}/api/frigate/notifications/{{ event_id }}/{{ camera }}/clip.mp4"
-                            caption: "{{ title }}\n{{ message }}"
-                            parse_mode: !input telegram_parse_mode
-                            disable_notification: !input telegram_silent
-                - delay:
-                    minutes: !input cooldown
-              until:
-                - condition: template
-                  value_template: "{{ wait.trigger.id == 'clip_exists' or repeat.index == 2 }}"
-
+                            video:
+                              - url: "{{host}}{{gif}}"
+                                caption: "{{telegram_message}}"
+              
+                  - delay:
+                      hours: 0
+                      minutes: !input cooldown
+                      seconds: 0
+                      milliseconds: 0
+                    alias: Cooldown
+            until:
+              - condition: template
+                value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
 trigger_variables:
   frigate_topic: frigate/reviews
-
 variables:
-  event_type: "{{ trigger.payload_json['type'] | default('unknown') }}"
-  camera: "{{ trigger.payload_json['after']['camera'] | default('unknown') }}"
-  camera_name: "{{ camera | replace('_', ' ') | title | default('Camera') }}"
+  frigate_topic: frigate/reviews
   input_camera: !input in_camera
-  input_camera_name: "{{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}"
-  objects: "{{ trigger.payload_json['after']['data']['objects'] | join(', ') | default('object') }}"
-  zones: "{{ trigger.payload_json['after']['data']['zones'] | join(', ') | default('area') }}"
-  event_id: "{{ trigger.payload_json['after']['id'] | default('unknown') }}"
   input_objects: !input in_objects
+  input_sub_labels: !input in_sub_labels
   input_zones: !input in_zones
+  custom_zones: !input in_custom_zones
+  all_zones: !input in_all_zones
   host: !input in_host
-  download_dir: !input download_dir
-  sub_dir: "frigate/"
-  download_path: >-
-    {% set dir = (download_dir | trim | default('downloader')) %}
-    {% if dir[-1] != '/' %}
-      {{ dir + '/' + sub_dir }}
-    {% else %}
-      {{ dir + sub_dir }}
-    {% endif %}
-  notify_devices: !input notify_devices
+  downloader: !input in_downloader
+  downloader_sub: !input in_downloader_sub
+  notify_devices: !input in_notify_devices
+  telegram_notify: !input in_telegram_notify
+  use_llm_image: !input in_use_llm_image
+  gen_title: !input in_gen_title
+  gen_title2: !input in_gen_title2
+  person_prompt: !input person_prompt
+  car_prompt: !input car_prompt
+  cat_prompt: !input cat_prompt
+  dog_prompt: !input dog_prompt
+  bird_prompt: !input bird_prompt
+  default_prompt: !input default_prompt
+  event: "{{ trigger.payload_json }}"
+  type: "{{event['type']}}"
+  review_id: "{{event['after']['id']}}"
+  input_camera_name: >-
+    {{input_camera|expand|map(attribute='attributes.camera_name',
+    default='none')|list}}
+  camera: "{{event['after']['camera']}}"
+  camera_name: "{{ camera | replace('_', ' ') | title }}"
+  camera_match: "{{input_camera_name|select('equalto', camera)|list|length>0 }}"
+  detections: "{{ event['after']['data']['detections'] }}"
+  id: "{{ detections[0] }}"
+  objects: "{{ event['after']['data']['objects']}}"
+  objects_match: >-
+    {{input_objects | length == 0 or (input_objects |select('in', objects) |list
+    |length > 0) }}
+  sub_labels: "{{ event['after']['data']['sub_labels']}}"
+  sub_labels_match: >-    
+    {{input_sub_labels | length == 0 or (input_sub_labels |select('in', sub_labels) |list
+    |length > 0) }}
+  zone_names: >-
+        {% set device_zones = input_zones %}
+        {% set zones = device_zones + custom_zones %}
+        {% set ns = namespace(device_names=[]) %} 
+        {% for device_id in zones %}
+        {% if device_attr(device_id, "name") != None %}
+        {% set device_name = device_attr(device_id, "name") %}
+        {% set sanitized_name = device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
+        {% set ns.device_names = ns.device_names + [sanitized_name] %}
+        {% else%}
+        {% set ns.device_names = ns.device_names + [device_id  | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_")] %}
+        {% endif %} 
+        {% endfor %} 
+        {{ ns.device_names }}
+  before_zones: "{{ event['before']['data']['zones'] | lower | default([]) }}"
+  after_zones: "{{ event['after']['data']['zones'] | lower | default([]) }}"
+  zone_entered: >-
+    {{ zone_names | length == 0 or ((zone_names | select('in', (before_zones + after_zones)) |list |length) > 0) }}
+  all_zones_entered: >-
+    {{true if (zone_names | reject('in',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
+  zone_match: "{{zone_entered and all_zones_entered}}"
+  input_severity: !input in_severity
+  severity: "{{event['before']['severity'] + event['after']['severity']}}"
+  severity_match: "{{input_severity|select('in', severity)|list|length > 0}}"
   notify_names: >-
-    {% set ns = namespace(device_names=[]) %}
-    {% for device_id in notify_devices %}
-      {% set device_name = device_attr(device_id, 'name') | default('unknown') %}
-      {% set sanitized_name = 'mobile_app_' + device_name | lower | regex_replace('[^a-z0-9_-]', '') %}
+    {% set ns = namespace(device_names=[]) %} 
+    {% for device_id in notify_devices%}
+      {% set device_name = device_attr(device_id, "name") %}
+      {% set sanitized_name = "mobile_app_" + device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
       {% set ns.device_names = ns.device_names + [sanitized_name] %}
-    {% endfor %}
+    {% endfor %} 
     {{ ns.device_names }}
-  telegram_chat_id: !input telegram_chat_id
-  use_llm_image: !input use_llm_image
-  use_llm_clip: !input use_llm_clip
-  notification_title: !input notification_title
-  notification_message: !input notification_message
-
+  root_dir: >-
+    {% set dir = downloader|trim %}
+    {%if dir|length > 0%}
+     {% if dir[-1] != "/" %}
+     {% set dir = dir + "/" %}
+     {% endif%}
+    {% endif%}
+    {{dir}}
+  sub_dir: >-
+    {% set dir = downloader_sub|trim %}
+    {%if dir|length > 0%}
+     {% if dir[-1] != "/" %}
+     {% set dir = dir + "/" %}
+     {% endif%}
+    {% endif%}
+    {{dir}}
+  video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
+  video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
+  thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
+  image: /api/frigate/notifications/{{id}}/snapshot.jpg
+  image_local: "{{root_dir}}{{sub_dir}}{{id}}_snapshot.jpg"
+  gif: /api/frigate/notifications/{{review_id}}/review_preview.gif
+  custom_msg: !input in_custom_msg
+  title_image: !input in_title_image
+  title_clip: !input in_title_clip
+  action1: !input in_action1
+  action2: !input in_action2
 mode: parallel
 max: 4
