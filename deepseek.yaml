@@ -442,7 +442,6 @@ blueprint:
           description: Select Telegram notification service to use
           default: []
           selector:
-            multiple: true
             filter:
               - integration: telegram_bot
         click_action1:
