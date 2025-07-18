@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.45)
+  name: Frigate LLM Notification with Telegram (v0.46)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -14,7 +14,8 @@ blueprint:
      Link: https://www.home-assistant.io/integrations/telegram_bot/ <br /><br />
      
      Information:<br />
-     - Supports multiple Frigate cameras, selected via the Frigate Camera input. <br />
+     - Supports multiple Frigate cameras, selected via the Frigate Cameras input. <br />
+     - Choose between standard or localized (Russian with emojis) object lists for notifications. <br />
      - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br />
      - Telegram notifications require a Telegram bot and chat ID configured in Home Assistant. <br /><br />
      Description: <br />
@@ -36,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.45
+     Version: v 0.46
 
   domain: automation
   input:
@@ -55,6 +56,18 @@ blueprint:
               filter:
                 - integration: frigate
                   domain: camera
+        object_set:
+          name: Object Set
+          description: Choose the object list to use for notifications (Standard or Localized with Russian names and emojis).
+          default: standard
+          selector:
+            select:
+              options:
+                - label: Standard
+                  value: standard
+                - label: Localized (Russian with Emojis)
+                  value: localized
+              mode: dropdown
         in_severity:
           name: Severity
           description: Frigate event severity.
@@ -102,62 +115,32 @@ blueprint:
             select:
               multiple: true
               custom_value: true
-              options:
-                - person
-                - bicycle
-                - car
-                - motorcycle
-                - airplane
-                - bus
-                - train
-                - boat
-                - traffic light
-                - fire hydrant
-                - street sign
-                - stop sign
-                - parking meter
-                - bench
-                - bird
-                - cat
-                - dog
-                - horse
-                - sheep
-                - cow
-                - elephant
-                - bear
-                - zebra
-                - giraffe
-                - hat
-                - backpack
-                - umbrella
-                - shoe
-                - eye glasses
-                - handbag
-                - tie
-                - suitcase
-                - frisbee
-                - skis
-                - snowboard
-                - sports ball
-                - kite
-                - baseball bat
-                - baseball glove
-                - skateboard
-                - surfboard
-                - tennis racket
-                - bottle
-                - plate
-                - wine glass
-                - cup
-                - fork
-                - knife
-                - spoon
-                - bowl
-                - banana
-                - apple
-                - sandwich
-                - orange
-                - broccoli
+              options: >
+                {% if object_set == 'standard' %}
+                  [
+                    "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "boat",
+                    "traffic light", "fire hydrant", "street sign", "stop sign", "parking meter",
+                    "bench", "bird", "cat", "dog", "horse", "sheep", "cow", "elephant", "bear",
+                    "zebra", "giraffe", "hat", "backpack", "umbrella", "shoe", "eye glasses",
+                    "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball",
+                    "kite", "baseball bat", "baseball glove", "skateboard", "surfboard",
+                    "tennis racket", "bottle", "plate", "wine glass", "cup", "fork", "knife",
+                    "spoon", "bowl", "banana", "apple", "sandwich", "orange", "broccoli"
+                  ]
+                {% else %}
+                  [
+                    {"value": "person", "label": "👤 ЧЕЛОВЕК"},
+                    {"value": "cat", "label": "🐈 КОШКА"},
+                    {"value": "dog", "label": "🐕 СОБАКА"},
+                    {"value": "bird", "label": "🐦 ПТИЦА"},
+                    {"value": "car", "label": "🚗 МАШИНА"},
+                    {"value": "face", "label": "🧔‍♀️ ЛИЦО"},
+                    {"value": "bicycle", "label": "🚲 ВЕЛОСИПЕД"},
+                    {"value": "motorcycle", "label": "🏍 МОТОЦИКЛ"},
+                    {"value": "bus", "label": "🚌 АВТОБУС"},
+                    {"value": "truck", "label": "🚚 ГРУЗОВИК"}
+                  ]
+                {% endif %}
         in_sub_labels:
           name: Sub Labels Required
           description: Frigate sub labels required in the selected zones if any.
@@ -228,7 +211,13 @@ blueprint:
         in_custom_msg:
           name: No AI Notification Message
           description: Initial notification message if not using LLM Vision for the snapshot analysis.
-          default: "A {{objects| join(' and a ')|replace('_', ' ')}} was detected in the {{after_zones| join(' and the ')|replace('_', ' ')}}" 
+          default: >-
+            {% set object_map = {
+              "person": "👤 ЧЕЛОВЕК", "cat": "🐈 КОШКА", "dog": "🐕 СОБАКА", "bird": "🐦 ПТИЦА",
+              "car": "🚗 МАШИНА", "face": "🧔‍♀️ ЛИЦО", "bicycle": "🚲 ВЕЛОСИПЕД",
+              "motorcycle": "🏍 МОТОЦИКЛ", "bus": "🚌 АВТОБУС", "truck": "🚚 ГРУЗОВИК"
+            } %}
+            A {{ objects | map('replace', '_', ' ') | map('get', object_map, objects) | join(' and a ') }} was detected in the {{ after_zones | join(' and the ') | replace('_', ' ') }}
           selector:
             text:
               multiline: true
@@ -242,10 +231,15 @@ blueprint:
         prompt:
           name: Prompt 
           description: Model prompt.
-          default: >
+          default: >-
+            {% set object_map = {
+              "person": "👤 ЧЕЛОВЕК", "cat": "🐈 КОШКА", "dog": "🐕 СОБАКА", "bird": "🐦 ПТИЦА",
+              "car": "🚗 МАШИНА", "face": "🧔‍♀️ ЛИЦО", "bicycle": "🚲 ВЕЛОСИПЕД",
+              "motorcycle": "🏍 МОТОЦИКЛ", "bus": "🚌 АВТОБУС", "truck": "🚚 ГРУЗОВИК"
+            } %}
             Summarise the image in a 1 sentence response,
-            concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
-            the {{zone_names| join(' and ,')|replace('_',' ')}}. 
+            concentrate on the {{ input_objects | map('replace', '_', ' ') | map('get', object_map, input_objects) | join(', ') }} if seen within
+            the {{ zone_names | join(' and ,') | replace('_', ' ') }}. 
             Any person approaching the camera should take priority over all other events.
             If you see a known person from memory, mention this in the response.
             Do not mention the prompt or describe the environment in your response.
@@ -325,11 +319,16 @@ blueprint:
         prompt2:
           name: Prompt 
           description: Model prompt.
-          default: >
-            Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}.
-            The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}.
+          default: >-
+            {% set object_map = {
+              "person": "👤 ЧЕЛОВЕК", "cat": "🐈 КОШКА", "dog": "🐕 СОБАКА", "bird": "🐦 ПТИЦА",
+              "car": "🚗 МАШИНА", "face": "🧔‍♀️ ЛИЦО", "bicycle": "🚲 ВЕЛОСИПЕД",
+              "motorcycle": "🏍 МОТОЦИКЛ", "bus": "🚌 АВТОБУС", "truck": "🚚 ГРУЗОВИК"
+            } %}
+            Analyse the video clip which should contain the following objects {{ input_objects | map('replace', '_', ' ') | map('get', object_map, input_objects) | join(', ') }}.
+            The areas of interest are the {{ zone_names | join(' and ,') | replace('_', ' ') }}.
             Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-            Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
+            Consider what the {{ input_objects | map('replace', '_', ' ') | map('get', object_map, input_objects) | join(', ') }} is doing, why, and what it might do next.
             Do not mention the prompt or describe the environment in your response.  
             Your response will be used for a mobile phone notification message with the clip attached.
           selector:
@@ -849,6 +848,7 @@ trigger_variables:
 variables:
   frigate_topic: frigate/reviews
   input_camera: !input in_camera
+  object_set: !input object_set
   input_objects: !input in_objects
   input_sub_labels: !input in_sub_labels
   input_zones: !input in_zones
@@ -872,10 +872,16 @@ variables:
   camera_match: "{{ camera in input_camera_name }}"
   detections: "{{ event['after']['data']['detections'] }}"
   id: "{{ detections[0] }}"
-  objects: "{{ event['after']['data']['objects']}}"
+  objects: >-
+    {% set object_map = {
+      "person": "👤 ЧЕЛОВЕК", "cat": "🐈 КОШКА", "dog": "🐕 СОБАКА", "bird": "🐦 ПТИЦА",
+      "car": "🚗 МАШИНА", "face": "🧔‍♀️ ЛИЦО", "bicycle": "🚲 ВЕЛОСИПЕД",
+      "motorcycle": "🏍 МОТОЦИКЛ", "bus": "🚌 АВТОБУС", "truck": "🚚 ГРУЗОВИК"
+    } %}
+    {{ event['after']['data']['objects'] | map('get', object_map, event['after']['data']['objects']) | list if object_set == 'localized' else event['after']['data']['objects'] }}
   objects_match: >-
-    {{ input_objects | length == 0 or (input_objects | select('in', objects) | list | length > 0) }}
-  sub_labels: "{{ event['after']['data']['sub_labels']}}"
+    {{ input_objects | length == 0 or (input_objects | select('in', event['after']['data']['objects']) | list | length > 0) }}
+  sub_labels: "{{ event['after']['data']['sub_labels'] }}"
   sub_labels_match: >-    
     {{ input_sub_labels | length == 0 or (input_sub_labels | select('in', sub_labels) | list | length > 0) }}
   zone_names: >-
