@@ -1,6 +1,6 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.44)
-  author: whag
+  name: Frigate LLM Notification Latest (v0.42) - Telegram Enhanced
+  author: whag & Manus AI
   description: >
      Basic requirements:<br />
      - Home Assistant with an MQTT broker setup. <br />
@@ -20,7 +20,6 @@ blueprint:
      The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability for usingh LLM Vision with Frigate.
      Note that the downloader folder will need maintained separately (i.e. old files deleted or backed up). This can be achieved automatically via a shell command or similar <br />
      This automation runs in parallel mode. <br /><br />
-     
      Tested on Android only. <br /><br />
      
      Variables which may be useful for the custom message and AI prompts
@@ -34,7 +33,7 @@ blueprint:
        - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
        - {{detections{1] = Event ID 2<br />
 
-     Version: v 0.44
+     Version: v 0.42
 
   domain: automation
   input:
@@ -239,6 +238,60 @@ blueprint:
           default: true
           selector:
             boolean: {}
+        prompt:
+          name: Default Prompt 
+          description: Model prompt for objects not specified below.
+          default: Summarise the image in a 1 sentence response,
+                   concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
+                   the {{zone_names| join(' and ,')|replace('_',' ')}}. 
+                   Any person approaching the camera should take priority over all other events.
+                   If you see a known person from memory, mention this in the response.
+                   Do not mention the prompt or describe the environment in your response.
+                   The response is an intial alert for a mobile phone security notification. 
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_car:
+          name: Prompt for Car
+          description: Custom prompt for car detection.
+          default: "A car was detected. Describe its make, model, and color if possible. Note any unusual activity."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_person:
+          name: Prompt for Person
+          description: Custom prompt for person detection.
+          default: "A person was detected. Describe their appearance, what they are doing, and if they are familiar."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_cat:
+          name: Prompt for Cat
+          description: Custom prompt for cat detection.
+          default: "A cat was detected. Describe its color and activity. Is it a known pet?"
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_dog:
+          name: Prompt for Dog
+          description: Custom prompt for dog detection.
+          default: "A dog was detected. Describe its breed, color, and activity. Is it a known pet?"
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_bird:
+          name: Prompt for Bird
+          description: Custom prompt for bird detection.
+          default: "A bird was detected. Describe its type and activity. Is it a common bird for the area?"
+          selector:
+            text:
+              multiline: true
+              multiple: false
         target_width: 
           name: Pixels  
           description: Width in pixels to downscale.
@@ -311,6 +364,60 @@ blueprint:
             text:
               multiline: false
               multiple: false
+        prompt2:
+          name: Default Prompt 
+          description: Model prompt for objects not specified below.
+          default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
+                   The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
+                   Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
+                   Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
+                   Do not mention the prompt or describe the environment in your response.  
+                   Your response will be used for a mobile phone notification message with the clip attached.
+                  
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt2_car:
+          name: Prompt for Car
+          description: Custom prompt for car detection in video clips.
+          default: "A car was detected in the video. Describe its movement, make, model, and color if possible. Note any unusual activity."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt2_person:
+          name: Prompt for Person
+          description: Custom prompt for person detection in video clips.
+          default: "A person was detected in the video. Describe their actions, appearance, and if they are familiar."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt2_cat:
+          name: Prompt for Cat
+          description: Custom prompt for cat detection in video clips.
+          default: "A cat was detected in the video. Describe its movement, color, and activity. Is it a known pet?"
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt2_dog:
+          name: Prompt for Dog
+          description: Custom prompt for dog detection in video clips.
+          default: "A dog was detected in the video. Describe its movement, breed, color, and activity. Is it a known pet?"
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt2_bird:
+          name: Prompt for Bird
+          description: Custom prompt for bird detection in video clips.
+          default: "A bird was detected in the video. Describe its flight pattern, type, and activity. Is it a common bird for the area?"
+          selector:
+            text:
+              multiline: true
+              multiple: false
         target_width2: 
           name: Pixels 
           description: Width in pixels to downscale.
@@ -378,7 +485,6 @@ blueprint:
               max: 60
               step: 1
               mode: slider
-
               
     Downloader:
       name: Downloader Options
@@ -437,16 +543,20 @@ blueprint:
               multiple: true
               filter:
               - integration: mobile_app
-        in_telegram_notify:
-          name: Telegram Notification Service
-          description: Select Telegram notification service to use
-          default: ''
+        in_telegram_bot:
+          name: Telegram Bot
+          description: The Telegram bot to send notifications through.
           selector:
             entity:
-              domain: notify
+              domain: telegram_bot
               multiple: false
-              device:
-                integration: telegram_bot
+        in_telegram_chat_id:
+          name: Telegram Chat ID
+          description: The chat ID to send Telegram messages to.
+          selector:
+            text:
+              multiline: false
+              multiple: false
         click_action1:
           name: Click Action New Event 
           description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
@@ -501,75 +611,6 @@ blueprint:
               max: 60
               step: 1
               mode: slider
-
-    llm_prompts:
-      name: LLM Custom Prompts
-      icon: mdi:robot
-      collapsed: true
-      description: Custom prompts for different object types that will be used for LLM Vision analysis
-      input:
-        person_prompt:
-          name: Person Prompt
-          description: Custom LLM prompt for person detection
-          default: >
-            Analyze this image focusing on any person detected.
-            Describe their appearance, actions, and direction of movement.
-            If the person is recognized from memory, mention their name.
-            Keep the response concise for a mobile notification.
-          selector:
-            text:
-              multiline: true
-        car_prompt:
-          name: Car Prompt
-          description: Custom LLM prompt for car detection
-          default: >
-            Analyze this image focusing on any vehicle detected.
-            Describe the vehicle's color, type, and any identifiable features.
-            Note its direction of movement if visible.
-            Keep the response concise for a mobile notification.
-          selector:
-            text:
-              multiline: true
-        cat_prompt:
-          name: Cat Prompt
-          description: Custom LLM prompt for cat detection
-          default: >
-            Analyze this image focusing on any cat detected.
-            Describe the cat's color, size, and what it's doing.
-            Keep the response concise and friendly for a mobile notification.
-          selector:
-            text:
-              multiline: true
-        dog_prompt:
-          name: Dog Prompt
-          description: Custom LLM prompt for dog detection
-          default: >
-            Analyze this image focusing on any dog detected.
-            Describe the dog's breed (if recognizable), color, size, and behavior.
-            Keep the response concise and friendly for a mobile notification.
-          selector:
-            text:
-              multiline: true
-        bird_prompt:
-          name: Bird Prompt
-          description: Custom LLM prompt for bird detection
-          default: >
-            Analyze this image focusing on any bird detected.
-            Describe the bird's color, size, and what it's doing.
-            Keep the response concise for a mobile notification.
-          selector:
-            text:
-              multiline: true
-        default_prompt:
-          name: Default Prompt
-          description: Default LLM prompt for other objects
-          default: >
-            Analyze this image focusing on detected objects: {{objects|join(', ')|replace('_', ' ')}}
-            Describe what's happening in a concise manner suitable for a mobile notification.
-          selector:
-            text:
-              multiline: true
-
     Actions:
       name: Custom Actions
       icon: mdi:bell
@@ -588,9 +629,326 @@ blueprint:
           selector:
             action: {}
 
+triggers:
+  - trigger: mqtt
+    topic: "{{frigate_topic}}"
+    payload: new
+    value_template: "{{value_json['type']}}"
+    id: New event
+  - trigger: mqtt
+    topic: "{{frigate_topic}}"
+    payload: end
+    value_template: "{{value_json['type']}}"
+    id: End event
+conditions:
+  - condition: template
+    value_template: "{{camera_match}}"
+    alias: Valid Camera
+  - condition: template
+    value_template: "{{objects_match}}"
+    alias: Object Matched
+  - condition: template
+    value_template: "{{sub_labels_match}}"
+    alias: Sub Label Matched
+  - condition: template
+    value_template: "{{zone_match}}"
+    alias: Valid Zone
+  - condition: template
+    value_template: "{{severity_match}}"
+    alias: Valid Alert
+actions:
+  - action: logbook.log
+    metadata: {}
+    data:
+      name: LLM Vision Frigate Notification log
+      entity_id: "{{this.entity_id}}"
+      message: >-
+        Event type: {{type}} /n
+        Review id: {{review_id}} /n
+        Input camera: {{input_camera}} /n
+        Camera triggered: {{input_camera_name}} /n  
+        Detections ID's: {{detections}} /n 
+        Detection 1 ID: {{id}} /n 
+        Objects required: {{input_objects}} /n 
+        Objects found: {{objects}} /n
+        Object match: {{objects_match}} /n
+        Sub Labels required: {{input_sub_labels}} /n
+        Sub Labels found: {{sub_labels}} /n
+        Sub Labels match: {{sub_labels_match}} /n
+        Zones required: {{zone_names}} /n
+        Zones triggered: {{after_zones}} /n
+        Zone match: {{zone_match}} /n 
+        Notify devices: {{notify_names}} /n
+        Downloader root: {{root_dir}} /n
+        Downloader sub: {{sub_dir}} /n
+        Thumb url {{thumb}} /n
+        Snapshot url {{image}}  /n 
+        Clip url {{video}} /n
+        GIF url {{gif}}
+  - alias: Event is new or update Do LLM image analysis and send notification
+    if:
+      - condition: trigger
+        id:
+          - New event
+    then:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 2
+          milliseconds: 0
+      - parallel:
+        - alias: Run Custom Actions New 
+          choose:
+            - conditions: "{{action1|length != 0}}"
+              sequence: !input in_action1
+        - alias: Repeat Until file exists or 2 retries
+          repeat:
+            sequence:
+              - action: downloader.download_file
+                continue_on_error: true
+                metadata: {}
+                data:
+                  overwrite: true
+                  url: "{{host}}{{image}}"
+                  subdir: "{{sub_dir}}"
+                  filename: "{{id}}_snapshot.jpg"
+              - alias: Wait for downloader to complete
+                wait_for_trigger:
+                  - trigger: event
+                    event_type: downloader_download_completed
+                    event_data:
+                      url: "{{host}}{{image}}"
+                      filename: "{{id}}_snapshot.jpg"
+                    id: image_exists
+                continue_on_timeout: true
+                timeout:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input download_image_wait
+                  milliseconds: 0
+              - alias: If file exists run LLM Image Analyzer and send notification
+                if:
+                  - condition: template
+                    value_template: "{{ wait.trigger.id == 'image_exists' }}"
+                then:
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: !input delay_image
+                      milliseconds: 0
+                  - variables:
+                      selected_prompt: >
+                        {% set object_found = objects[0] if objects | length > 0 else 'none' %}
+                        {% if object_found == 'car' %}
+                          {{ prompt_car }}
+                        {% elif object_found == 'person' %}
+                          {{ prompt_person }}
+                        {% elif object_found == 'cat' %}
+                          {{ prompt_cat }}
+                        {% elif object_found == 'dog' %}
+                          {{ prompt_dog }}
+                        {% elif object_found == 'bird' %}
+                          {{ prompt_bird }}
+                        {% else %}
+                          {{ prompt }}
+                        {% endif %}
+                  - if:
+                      - condition: template
+                        value_template: "{{use_llm_image}}"
+                    then:
+                      - action: llmvision.image_analyzer
+                        data:
+                          provider: !input provider
+                          model: !input model
+                          remember: !input use_remember
+                          expose_images: !input expose_image
+                          use_memory: !input use_memory
+                          image_file: "{{image_local}}"
+                          message: "{{ selected_prompt }}"
+                          include_filename: false
+                          target_width: !input target_width
+                          max_tokens: !input tokens
+                          #temperature: !input temperature
+                          generate_title: "{{gen_title}}"
+                        response_variable: response
+                      - delay:
+                          hours: 0
+                          minutes: 0
+                          seconds: 5
+                          milliseconds: 0
+                      - variables:
+                          title: "{{response.response_title if gen_title else title_image}}"
+                          msg: "{{response.response_text}}"
+                          
+                    else:
+                      - variables:
+                          title: "{{title_image}}"
+                          msg: "{{custom_msg}}"
+                  - alias: Send Intial notification to notify devices
+                    repeat:
+                      for_each: "{{notify_names}}"
+                      sequence:
+                        - action: notify.{{ repeat.item }}
+                          data:
+                            title: "{{title}}"
+                            message: "{{msg}}"
+                            data:
+                              image: "{{thumb}}"
+                              entity_id: "{{input_camera}}"
+                              url: !input click_action1
+                              clickAction: !input click_action1
+                              group: "{{camera}}-frigate-notification"
+                              tag: "{{id}}"
+                              ttl: 0
+                              priority: high
+                  - alias: Send Telegram notification
+                    if:
+                      - condition: template
+                        value_template: "{{ in_telegram_bot is not none and in_telegram_chat_id is not none }}"
+                    then:
+                      - service: "{{ in_telegram_bot }}.send_photo"
+                        data:
+                          chat_id: "{{ in_telegram_chat_id }}"
+                          url: "{{ image }}"
+                          caption: "{{ title }}\n{{ msg }}"
+              - delay:
+                  hours: 0
+                  minutes: !input cooldown
+                  seconds: 0
+                  milliseconds: 0
+                alias: Cooldown
+            until:
+              - condition: template
+                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
+  - alias: Event is end Do LLM video analysis and send notification
+    if:
+      - condition: trigger
+        id:
+          - End event
+    then:
+      - delay:
+          hours: 0
+          minutes: 0
+          seconds: 5
+          milliseconds: 0
+      - parallel:
+        - alias: Run Custom Actions End 
+          choose:
+            - conditions: "{{action2|length != 0}}"
+              sequence: !input in_action2
+        - repeat:
+            sequence:
+              - action: downloader.download_file
+                continue_on_error: true
+                metadata: {}
+                data:
+                  overwrite: true
+                  url: "{{host}}{{video}}"
+                  subdir: "{{sub_dir}}"
+                  filename: "{{id}}_clip.mp4"
+              - alias: Wait for downloader to complete
+                wait_for_trigger:
+                  - trigger: event
+                    event_type: downloader_download_completed
+                    event_data:
+                      url: "{{host}}{{video}}"
+                      filename: "{{id}}_clip.mp4"
+                    id: clip_exists
+                continue_on_timeout: true
+                timeout:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input download_clip_wait
+                  milliseconds: 0
+              - delay:
+                  hours: 0
+                  minutes: 0
+                  seconds: !input delay_clip
+                  milliseconds: 0
+              - variables:
+                  selected_prompt2: >
+                    {% set object_found = objects[0] if objects | length > 0 else 'none' %}
+                    {% if object_found == 'car' %}
+                      {{ prompt2_car }}
+                    {% elif object_found == 'person' %}
+                      {{ prompt2_person }}
+                    {% elif object_found == 'cat' %}
+                      {{ prompt2_cat }}
+                    {% elif object_found == 'dog' %}
+                      {{ prompt2_dog }}
+                    {% elif object_found == 'bird' %}
+                      {{ prompt2_bird }}
+                    {% else %}
+                      {{ prompt2 }}
+                    {% endif %}
+              - if:
+                  - condition: template
+                    value_template: "{{wait.trigger.id == 'clip_exists'}}"
+                then:
+                  - action: llmvision.video_analyzer
+                    metadata: {}
+                    data:
+                      provider: !input provider
+                      model: !input model
+                      remember: !input use_remember2
+                      expose_images: !input expose_clip
+                      use_memory: !input use_memory2
+                      video_file: "{{video_local}}"
+                      max_frames: !input max_frames
+                      include_filename: false
+                      target_width: !input target_width2
+                      max_tokens: !input tokens2
+                      #temperature: !input temperature2
+                      generate_title: "{{gen_title2}}"
+                      message: "{{ selected_prompt2 }}"
+  
+                    response_variable: response
+                  - delay:
+                      hours: 0
+                      minutes: 0
+                      seconds: 1
+                      milliseconds: 0
+                  - alias: Update notification to notify devices
+                    repeat:
+                      for_each: "{{notify_names}}"
+                      sequence:
+                        - action: notify.{{ repeat.item }}
+                          data:
+                            title: "{{response.title if gen_title2 else title_clip}}"
+                            message: "{{response.response_text}}"
+                            data:
+                              video: "{{gif}}"
+                              image: "{{gif}}"
+                              entity_id: "{{input_camera}}"
+                              url: !input click_action2
+                              clickAction: !input click_action2
+                              group: "{{camera}}-frigate-notification"
+                              tag: "{{id}}"
+                              interruption-level: active
+                              ttl: 0
+                              priority: high
+                  - alias: Send Telegram notification
+                    if:
+                      - condition: template
+                        value_template: "{{ in_telegram_bot is not none and in_telegram_chat_id is not none }}"
+                    then:
+                      - service: "{{ in_telegram_bot }}.send_video"
+                        data:
+                          chat_id: "{{ in_telegram_chat_id }}"
+                          url: "{{ video }}"
+                          caption: "{{ response.title if gen_title2 else title_clip }}\n{{ response.response_text }}"
+              
+                  - delay:
+                      hours: 0
+                      minutes: !input cooldown
+                      seconds: 0
+                      milliseconds: 0
+                    alias: Cooldown
+            until:
+              - condition: template
+                value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
 trigger_variables:
   frigate_topic: frigate/reviews
-
 variables:
   frigate_topic: frigate/reviews
   input_camera: !input in_camera
@@ -603,16 +961,9 @@ variables:
   downloader: !input in_downloader
   downloader_sub: !input in_downloader_sub
   notify_devices: !input in_notify_devices
-  telegram_notify: !input in_telegram_notify
   use_llm_image: !input in_use_llm_image
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
-  person_prompt: !input person_prompt
-  car_prompt: !input car_prompt
-  cat_prompt: !input cat_prompt
-  dog_prompt: !input dog_prompt
-  bird_prompt: !input bird_prompt
-  default_prompt: !input default_prompt
   event: "{{ trigger.payload_json }}"
   type: "{{event['type']}}"
   review_id: "{{event['after']['id']}}"
@@ -691,333 +1042,6 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
-
-triggers:
-  - trigger: mqtt
-    topic: "{{frigate_topic}}"
-    payload: new
-    value_template: "{{value_json['type']}}"
-    id: New event
-  - trigger: mqtt
-    topic: "{{frigate_topic}}"
-    payload: end
-    value_template: "{{value_json['type']}}"
-    id: End event
-
-conditions:
-  - condition: template
-    value_template: "{{camera_match}}"
-    alias: Valid Camera
-  - condition: template
-    value_template: "{{objects_match}}"
-    alias: Object Matched
-  - condition: template
-    value_template: "{{sub_labels_match}}"
-    alias: Sub Label Matched
-  - condition: template
-    value_template: "{{zone_match}}"
-    alias: Valid Zone
-  - condition: template
-    value_template: "{{severity_match}}"
-    alias: Valid Alert
-
-actions:
-  - action: logbook.log
-    metadata: {}
-    data:
-      name: LLM Vision Frigate Notification log
-      entity_id: "{{this.entity_id}}"
-      message: >-
-        Event type: {{type}} /n
-        Review id: {{review_id}} /n
-        Input camera: {{input_camera}} /n
-        Camera triggered: {{input_camera_name}} /n  
-        Detections ID's: {{detections}} /n 
-        Detection 1 ID: {{id}} /n 
-        Objects required: {{input_objects}} /n 
-        Objects found: {{objects}} /n
-        Object match: {{objects_match}} /n
-        Sub Labels required: {{input_sub_labels}} /n
-        Sub Labels found: {{sub_labels}} /n
-        Sub Labels match: {{sub_labels_match}} /n
-        Zones required: {{zone_names}} /n
-        Zones triggered: {{after_zones}} /n
-        Zone match: {{zone_match}} /n 
-        Notify devices: {{notify_names}} /n
-        Telegram notify: {{telegram_notify}} /n
-        Downloader root: {{root_dir}} /n
-        Downloader sub: {{sub_dir}} /n
-        Thumb url {{thumb}} /n
-        Snapshot url {{image}}  /n 
-        Clip url {{video}} /n
-        GIF url {{gif}}
-
-  - alias: Event is new or update Do LLM image analysis and send notification
-    if:
-      - condition: trigger
-        id:
-          - New event
-    then:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 2
-          milliseconds: 0
-      - parallel:
-        - alias: Run Custom Actions New 
-          choose:
-            - conditions: "{{action1|length != 0}}"
-              sequence: !input in_action1
-        - alias: Repeat Until file exists or 2 retries
-          repeat:
-            sequence:
-              - action: downloader.download_file
-                continue_on_error: true
-                metadata: {}
-                data:
-                  overwrite: true
-                  url: "{{host}}{{image}}"
-                  subdir: "{{sub_dir}}"
-                  filename: "{{id}}_snapshot.jpg"
-              - alias: Wait for downloader to complete
-                wait_for_trigger:
-                  - trigger: event
-                    event_type: downloader_download_completed
-                    event_data:
-                      url: "{{host}}{{image}}"
-                      filename: "{{id}}_snapshot.jpg"
-                    id: image_exists
-                continue_on_timeout: true
-                timeout:
-                  hours: 0
-                  minutes: 0
-                  seconds: !input download_image_wait
-                  milliseconds: 0
-              - alias: If file exists run LLM Image Analyzer and send notification
-                if:
-                  - condition: template
-                    value_template: "{{ wait.trigger.id == 'image_exists' }}"
-                then:
-                  - delay:
-                      hours: 0
-                      minutes: 0
-                      seconds: !input delay_image
-                      milliseconds: 0
-                  - variables:
-                      llm_prompt: >-
-                        {% if 'person' in objects %}
-                          {{person_prompt}}
-                        {% elif 'car' in objects %}
-                          {{car_prompt}}
-                        {% elif 'cat' in objects %}
-                          {{cat_prompt}}
-                        {% elif 'dog' in objects %}
-                          {{dog_prompt}}
-                        {% elif 'bird' in objects %}
-                          {{bird_prompt}}
-                        {% else %}
-                          {{default_prompt}}
-                        {% endif %}
-                  - if:
-                      - condition: template
-                        value_template: "{{use_llm_image}}"
-                    then:
-                      - action: llmvision.image_analyzer
-                        data:
-                          provider: !input provider
-                          model: !input model
-                          remember: !input use_remember
-                          expose_images: !input expose_image
-                          use_memory: !input use_memory
-                          image_file: "{{image_local}}"
-                          message: "{{llm_prompt}}"
-                          include_filename: false
-                          target_width: !input target_width
-                          max_tokens: !input tokens
-                          generate_title: "{{gen_title}}"
-                        response_variable: response
-                      - delay:
-                          hours: 0
-                          minutes: 0
-                          seconds: 5
-                          milliseconds: 0
-                      - variables:
-                          title: "{{response.response_title if gen_title else title_image}}"
-                          msg: "{{response.response_text}}"
-                          
-                    else:
-                      - variables:
-                          title: "{{title_image}}"
-                          msg: "{{custom_msg}}"
-                  - alias: Send Intial notification to notify devices
-                    repeat:
-                      for_each: "{{notify_names}}"
-                      sequence:
-                        - action: notify.{{ repeat.item }}
-                          data:
-                            title: "{{title}}"
-                            message: "{{msg}}"
-                            data:
-                              image: "{{thumb}}"
-                              entity_id: "{{input_camera}}"
-                              url: !input click_action1
-                              clickAction: !input click_action1
-                              group: "{{camera}}-frigate-notification"
-                              tag: "{{id}}"
-                              ttl: 0
-                              priority: high
-                  - alias: Send Telegram notification
-                    if:
-                      - condition: template
-                        value_template: "{{telegram_notify != '' and telegram_notify != 'None'}}"
-                    then:
-                      - action: notify.notify
-                        target:
-                          service: "{{telegram_notify}}"
-                        data:
-                          message: "{{msg}}"
-                          data:
-                            photo:
-                              - url: "{{host}}{{thumb}}"
-                                caption: "{{msg}}"
-              - delay:
-                  hours: 0
-                  minutes: !input cooldown
-                  seconds: 0
-                  milliseconds: 0
-                alias: Cooldown
-            until:
-              - condition: template
-                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
-
-  - alias: Event is end Do LLM video analysis and send notification
-    if:
-      - condition: trigger
-        id:
-          - End event
-    then:
-      - delay:
-          hours: 0
-          minutes: 0
-          seconds: 5
-          milliseconds: 0
-      - parallel:
-        - alias: Run Custom Actions End 
-          choose:
-            - conditions: "{{action2|length != 0}}"
-              sequence: !input in_action2
-        - repeat:
-            sequence:
-              - action: downloader.download_file
-                continue_on_error: true
-                metadata: {}
-                data:
-                  overwrite: true
-                  url: "{{host}}{{video}}"
-                  subdir: "{{sub_dir}}"
-                  filename: "{{id}}_clip.mp4"
-              - alias: Wait for downloader to complete
-                wait_for_trigger:
-                  - trigger: event
-                    event_type: downloader_download_completed
-                    event_data:
-                      url: "{{host}}{{video}}"
-                      filename: "{{id}}_clip.mp4"
-                    id: clip_exists
-                continue_on_timeout: true
-                timeout:
-                  hours: 0
-                  minutes: 0
-                  seconds: !input download_clip_wait
-                  milliseconds: 0
-              - delay:
-                  hours: 0
-                  minutes: 0
-                  seconds: !input delay_clip
-                  milliseconds: 0
-              - if:
-                  - condition: template
-                    value_template: "{{wait.trigger.id == 'clip_exists'}}"
-                then:
-                  - variables:
-                      llm_prompt2: >-
-                        {% if 'person' in objects %}
-                          {{person_prompt}}
-                        {% elif 'car' in objects %}
-                          {{car_prompt}}
-                        {% elif 'cat' in objects %}
-                          {{cat_prompt}}
-                        {% elif 'dog' in objects %}
-                          {{dog_prompt}}
-                        {% elif 'bird' in objects %}
-                          {{bird_prompt}}
-                        {% else %}
-                          {{default_prompt}}
-                        {% endif %}
-                  - action: llmvision.video_analyzer
-                    metadata: {}
-                    data:
-                      provider: !input provider
-                      model: !input model
-                      remember: !input use_remember2
-                      expose_images: !input expose_clip
-                      use_memory: !input use_memory2
-                      video_file: "{{video_local}}"
-                      max_frames: !input max_frames
-                      include_filename: false
-                      target_width: !input target_width2
-                      max_tokens: !input tokens2
-                      generate_title: "{{gen_title2}}"
-                      message: "{{llm_prompt2}}"
-                    response_variable: response
-                  - delay:
-                      hours: 0
-                      minutes: 0
-                      seconds: 1
-                      milliseconds: 0
-                  - alias: Update notification to notify devices
-                    repeat:
-                      for_each: "{{notify_names}}"
-                      sequence:
-                        - action: notify.{{ repeat.item }}
-                          data:
-                            title: "{{response.response_title if gen_title2 else title_clip}}"
-                            message: "{{response.response_text}}"
-                            data:
-                              video: "{{gif}}"
-                              image: "{{gif}}"
-                              entity_id: "{{input_camera}}"
-                              url: !input click_action2
-                              clickAction: !input click_action2
-                              group: "{{camera}}-frigate-notification"
-                              tag: "{{id}}"
-                              interruption-level: active
-                              ttl: 0
-                              priority: high
-                  - alias: Send Telegram update
-                    if:
-                      - condition: template
-                        value_template: "{{telegram_notify != '' and telegram_notify != 'None'}}"
-                    then:
-                      - action: notify.notify
-                        target:
-                          service: "{{telegram_notify}}"
-                        data:
-                          message: "{{response.response_text}}"
-                          data:
-                            video:
-                              - url: "{{host}}{{gif}}"
-                                caption: "{{response.response_text}}"
-              
-                  - delay:
-                      hours: 0
-                      minutes: !input cooldown
-                      seconds: 0
-                      milliseconds: 0
-                    alias: Cooldown
-            until:
-              - condition: template
-                value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
-
 mode: parallel
 max: 4
+
