@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.62)
+  name: Frigate LLM Notification with Telegram (v0.63)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -39,7 +39,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v0.62
+     Version: v0.63
 
   domain: automation
   input:
@@ -992,14 +992,11 @@ variables:
   event: >-
     {% set json_string = trigger.payload_json | default('{}') %}
     {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% if trigger is defined and trigger.payload_json is defined %}
-      {% if is_state_attr('input_text.temp_json', 'text') %}
-        {{ state_attr('input_text.temp_json', 'text') | from_json }}
-      {% else %}
-        {% set temp = {'text': cleaned_json} %}
-        {{ temp.text | from_json | default({}, true) }}
-      {% endif %}
+    {% set parsed = from_json(cleaned_json) | default({}, true) %}
+    {% if parsed is mapping %}
+      {{ parsed }}
     {% else %}
+      {{ log('Warning: Failed to parse trigger.payload_json. Check MQTT payload for errors.', level='warning') }}
       {}
     {% endif %}
   type: "{{ event['type'] | default('unknown') if event is mapping else 'unknown' }}"
@@ -1183,4 +1180,3 @@ variables:
       {{ prompt2_input }}
     {% endif %}
 mode: parallel
-max: 4
