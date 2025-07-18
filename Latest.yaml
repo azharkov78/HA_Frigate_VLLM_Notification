@@ -990,17 +990,33 @@ variables:
   prompt_input: !input prompt
   prompt2_input: !input prompt2
   event: >-
-    {% set json_string = trigger.payload_json | default('{}') %}
-    {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% set parsed = {} %}
-    {% if 'json_parse' is defined %}
-      {% set parsed = json_parse(cleaned_json) | default({}) %}
-    {% else %}
-      {{ log('Warning: JSON parsing not available. Some features may not work properly.', level='warning') }}
-      {% set parsed = {} %}
-    {% endif %}
-    {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
-      {{ parsed }}
+    {% if trigger is defined and trigger.payload_json is defined %}
+      {% set payload = trigger.payload_json %}
+      {
+        "type": "{{ payload.type | default('unknown') }}",
+        "before": {
+          "id": "{{ payload.before.id | default('unknown') }}",
+          "camera": "{{ payload.before.camera | default('unknown') }}",
+          "severity": "{{ payload.before.severity | default('') }}",
+          "data": {
+            "objects": {{ payload.before.data.objects | default([]) }},
+            "sub_labels": {{ payload.before.data.sub_labels | default([]) }},
+            "detections": {{ payload.before.data.detections | default([]) }},
+            "zones": {{ payload.before.data.zones | default([]) }}
+          }
+        },
+        "after": {
+          "id": "{{ payload.after.id | default('unknown') }}",
+          "camera": "{{ payload.after.camera | default('unknown') }}",
+          "severity": "{{ payload.after.severity | default('') }}",
+          "data": {
+            "objects": {{ payload.after.data.objects | default([]) }},
+            "sub_labels": {{ payload.after.data.sub_labels | default([]) }},
+            "detections": {{ payload.after.data.detections | default([]) }},
+            "zones": {{ payload.after.data.zones | default([]) }}
+          }
+        }
+      }
     {% else %}
       {}
     {% endif %}
