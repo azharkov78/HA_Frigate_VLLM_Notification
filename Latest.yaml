@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.63)
+  name: Frigate LLM Notification with Telegram (v0.64)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -39,7 +39,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v0.63
+     Version: v0.64
 
   domain: automation
   input:
@@ -315,17 +315,30 @@ blueprint:
             text:
               multiline: true
               multiple: false
-        custom_object_prompts:
-          name: Custom Object Prompts
-          description: >
-            Define custom prompts for specific objects as a JSON string (e.g., "{\"person\": \"Summarize any person approaching the camera in one sentence.\", \"car\": \"Describe the car's color and movement in one sentence.\"}"). 
-            Use {{ zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') }} as a placeholder for zone names. 
-            Leave empty (\"{}\") to use the default prompt.
-          default: "{}"
-          selector:
-            text:
+        prompt_templates:
+          name: Шаблоны промптов
+          collapsed: true
+          input:
+            person_prompt:
+              name: Для людей
+              default: "Опишите человека: пол, возраст, одежду, направление движения. Важно: приближается к дому?"
+              selector: text
               multiline: true
-              multiple: false
+            vehicle_prompt:
+              name: Для транспорта
+              default: "Опишите транспорт: тип, цвет, направление. Номерные знаки видны?"
+              selector: text
+              multiline: true
+            animal_prompt:
+              name: Для животных
+              default: "Опишите животное: вид, размер, поведение (спокойное/агрессивное)."
+              selector: text
+              multiline: true
+            default_prompt:
+              name: Стандартный
+              default: "Опишите объект: тип, расположение в кадре, возможные действия."
+              selector: text
+              multiline: true
         target_width: 
           name: Pixels  
           description: Width in pixels to downscale.
