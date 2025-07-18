@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.49)
+  name: Frigate LLM Notification with Telegram (v0.50)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.49
+     Version: v 0.50
 
   domain: automation
   input:
@@ -235,14 +235,16 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If using LLM for image analysis and want an AI-generated title, ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert"
+          default: "{{camera_name | default('Camera')}} - {{sub_labels | join(', ') | replace('_', ' ') | default('Alert')}}"
           selector:
             text:
         in_custom_msg:
           name: No AI Notification Message
           description: Initial notification message if not using LLM Vision for the snapshot analysis.
           default: >-
-            A {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in objects] | join(' and a ') }} was detected in the {{ after_zones | join(' and the ') | replace('_', ' ') }}
+            {% set obj_list = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in objects] %}
+            {% set zone_list = after_zones | join(' and the ') | replace('_', ' ') | default('specified area') %}
+            {{ 'A ' + (obj_list | join(' and a ') if obj_list else 'object') + ' was detected in the ' + zone_list }}
           selector:
             text:
               multiline: true
@@ -257,9 +259,11 @@ blueprint:
           name: Prompt 
           description: Model prompt.
           default: >-
+            {% set obj_list = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] %}
+            {% set zone_list = zone_names | join(' and ,') | replace('_', ' ') | default('specified area') %}
             Summarise the image in a 1 sentence response,
-            concentrate on the {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] | join(', ') }} if seen within
-            the {{ zone_names | join(' and ,') | replace('_', ' ') }}. 
+            concentrate on the {{ obj_list | join(', ') if obj_list else 'objects' }} if seen within
+            the {{ zone_list }}. 
             Any person approaching the camera should take priority over all other events.
             If you see a known person from memory, mention this in the response.
             Do not mention the prompt or describe the environment in your response.
@@ -331,7 +335,7 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description: Notification title for review clip. If you want an AI-generated title, ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert Update"
+          default: "{{camera_name | default('Camera')}} - {{sub_labels | join(', ') | replace('_', ' ') | default('Alert Update')}}"
           selector:
             text:
               multiline: false
@@ -340,10 +344,12 @@ blueprint:
           name: Prompt 
           description: Model prompt.
           default: >-
-            Analyse the video clip which should contain the following objects {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] | join(', ') }}.
-            The areas of interest are the {{ zone_names | join(' and ,') | replace('_', ' ') }}.
+            {% set obj_list = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] %}
+            {% set zone_list = zone_names | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            Analyse the video clip which should contain the following objects {{ obj_list | join(', ') if obj_list else 'objects' }}.
+            The areas of interest are the {{ zone_list }}.
             Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-            Consider what the {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] | join(', ') }} is doing, why, and what it might do next.
+            Consider what the {{ obj_list | join(', ') if obj_list else 'objects' }} is doing, why, and what it might do next.
             Do not mention the prompt or describe the environment in your response.  
             Your response will be used for a mobile phone notification message with the clip attached.
           selector:
@@ -704,12 +710,12 @@ actions:
                             seconds: 5
                             milliseconds: 0
                         - variables:
-                            title: "{{response.response_title if gen_title else title_image}}"
-                            msg: "{{response.response_text | default('Object detected')}}"
+                            title: "{{ (response.response_title if gen_title else title_image) | string | default('Camera Alert') }}"
+                            msg: "{{ response.response_text | string | default('Object detected') }}"
                       else:
                         - variables:
-                            title: "{{title_image}}"
-                            msg: "{{custom_msg | default('Object detected')}}"
+                            title: "{{ title_image | string | default('Camera Alert') }}"
+                            msg: "{{ custom_msg | string | default('Object detected') }}"
                     - alias: Send Initial notification to notify devices
                       repeat:
                         for_each: "{{notify_names}}"
@@ -736,9 +742,7 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             photo: "{{host}}{{image}}"
-                            caption: >-
-                              {% set caption_text = title + '\n' + msg %}
-                              {{ caption_text if caption_text is string else 'Object detected' }}
+                            caption: "{{ title + '\n' + msg | default('Camera Alert\nObject detected') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                 - delay:
@@ -826,8 +830,8 @@ actions:
                         sequence:
                           - action: notify.{{ repeat.item }}
                             data:
-                              title: "{{response.title | default(title_clip)}}"
-                              message: "{{response.response_text | default('Clip analyzed')}}"
+                              title: "{{ (response.title if gen_title2 else title_clip) | string | default('Camera Alert Update') }}"
+                              message: "{{ response.response_text | string | default('Clip analyzed') }}"
                               data:
                                 video: "{{gif}}"
                                 image: "{{gif}}"
@@ -848,9 +852,7 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             video: "{{host}}{{video}}"
-                            caption: >-
-                              {% set caption_text = (response.title | default(title_clip)) + '\n' + (response.response_text | default('Clip analyzed')) %}
-                              {{ caption_text if caption_text is string else 'Clip analyzed' }}
+                            caption: "{{ (response.title | default(title_clip)) + '\n' + (response.response_text | default('Clip analyzed')) | default('Camera Alert Update\nClip analyzed') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                     - delay:
@@ -912,7 +914,7 @@ variables:
     {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in event['after']['data']['objects']] | list }}
   objects_match: >-
     {{ input_objects | length == 0 or (input_objects | select('in', event['after']['data']['objects']) | list | length > 0) }}
-  sub_labels: "{{ event['after']['data']['sub_labels'] }}"
+  sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
   sub_labels_match: >-    
     {{ input_sub_labels | length == 0 or (input_sub_labels | select('in', sub_labels) | list | length > 0) }}
   zone_names: >-
