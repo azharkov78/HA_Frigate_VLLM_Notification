@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram Deepseek(v0.1) 
+  name: Frigate LLM Notification with Telegram Deepseek(v0.2) 
   author: whag
   description: >
      Basic requirements:<br />
@@ -34,7 +34,7 @@ blueprint:
        - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
        - {{detections{1] = Event ID 2<br />
 
-     Version: v 0.1
+     Version: v 0.2
 
   domain: automation
   input:
@@ -868,9 +868,7 @@ actions:
                       - condition: template
                         value_template: "{{telegram_notify != '' and telegram_notify != 'None'}}"
                     then:
-                      - action: notify.notify
-                        target:
-                          service: "{{telegram_notify}}"
+                      - service: "{{telegram_notify}}"
                         data:
                           message: "{{msg}}"
                           data:
@@ -996,9 +994,7 @@ actions:
                       - condition: template
                         value_template: "{{telegram_notify != '' and telegram_notify != 'None'}}"
                     then:
-                      - action: notify.notify
-                        target:
-                          service: "{{telegram_notify}}"
+                      - service: "{{telegram_notify}}"
                         data:
                           message: "{{response.response_text}}"
                           data:
