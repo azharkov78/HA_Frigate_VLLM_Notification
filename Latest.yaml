@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.47)
+  name: Frigate LLM Notification with Telegram (v0.48)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.47
+     Version: v 0.48
 
   domain: automation
   input:
@@ -109,7 +109,7 @@ blueprint:
             boolean: {}
         in_objects:
           name: Required Objects
-          description: Frigate objects required in the selected zones if any. Localized names with emojis are shown if Localized object set is selected.
+          description: Frigate objects required in the selected zones if any. Localized names with emojis are shown in notifications if Localized object set is selected.
           default: []
           selector:
             select:
@@ -242,7 +242,7 @@ blueprint:
           name: No AI Notification Message
           description: Initial notification message if not using LLM Vision for the snapshot analysis.
           default: >-
-            A {{ objects | map('get', object_map, objects) | join(' and a ') }} was detected in the {{ after_zones | join(' and the ') | replace('_', ' ') }}
+            A {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in objects] | join(' and a ') }} was detected in the {{ after_zones | join(' and the ') | replace('_', ' ') }}
           selector:
             text:
               multiline: true
@@ -258,7 +258,7 @@ blueprint:
           description: Model prompt.
           default: >-
             Summarise the image in a 1 sentence response,
-            concentrate on the {{ input_objects | map('get', object_map, input_objects) | join(', ') }} if seen within
+            concentrate on the {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] | join(', ') }} if seen within
             the {{ zone_names | join(' and ,') | replace('_', ' ') }}. 
             Any person approaching the camera should take priority over all other events.
             If you see a known person from memory, mention this in the response.
@@ -340,10 +340,10 @@ blueprint:
           name: Prompt 
           description: Model prompt.
           default: >-
-            Analyse the video clip which should contain the following objects {{ input_objects | map('get', object_map, input_objects) | join(', ') }}.
+            Analyse the video clip which should contain the following objects {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] | join(', ') }}.
             The areas of interest are the {{ zone_names | join(' and ,') | replace('_', ' ') }}.
             Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-            Consider what the {{ input_objects | map('get', object_map, input_objects) | join(', ') }} is doing, why, and what it might do next.
+            Consider what the {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] | join(', ') }} is doing, why, and what it might do next.
             Do not mention the prompt or describe the environment in your response.  
             Your response will be used for a mobile phone notification message with the clip attached.
           selector:
@@ -905,7 +905,7 @@ variables:
       {}
     {% endif %}
   objects: >-
-    {{ event['after']['data']['objects'] | map('get', object_map, event['after']['data']['objects']) | list }}
+    {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in event['after']['data']['objects']] | list }}
   objects_match: >-
     {{ input_objects | length == 0 or (input_objects | select('in', event['after']['data']['objects']) | list | length > 0) }}
   sub_labels: "{{ event['after']['data']['sub_labels'] }}"
