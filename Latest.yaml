@@ -1,5 +1,6 @@
+```yaml
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.44)
+  name: Frigate LLM Notification with Telegram (v0.45)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -14,7 +15,7 @@ blueprint:
      Link: https://www.home-assistant.io/integrations/telegram_bot/ <br /><br />
      
      Information:<br />
-     - Only suitable for one Frigate camera, use multiple instances of this automation for multiple cameras if required. <br />
+     - Supports multiple Frigate cameras, selected via the Frigate Camera input. <br />
      - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br />
      - Telegram notifications require a Telegram bot and chat ID configured in Home Assistant. <br /><br />
      Description: <br />
@@ -28,7 +29,7 @@ blueprint:
      Variables which may be useful for the custom message and AI prompts
        - {{input_objects}} = Objects required<br />
        - {{objects}} = Objects found<br />
-       - {{input_camera_name}} = Camera required<br />
+       - {{input_camera_name}} = Cameras selected<br />
        - {{camera_name}} = Camera triggered<br />
        - {{zone_names}} = Zones required<br />
        - {{before_zones}} = Zones triggered first<br />
@@ -36,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.44
+     Version: v 0.45
 
   domain: automation
   input:
@@ -47,11 +48,11 @@ blueprint:
       collapsed: true
       input:
         in_camera:
-          name: Frigate Camera
-          description: Frigate cameras only
+          name: Frigate Cameras
+          description: Select one or more Frigate cameras to monitor.
           selector:
             entity:
-              multiple: false
+              multiple: true
               filter:
                 - integration: frigate
                   domain: camera
@@ -594,7 +595,7 @@ actions:
       message: >-
         Event type: {{type}} /n
         Review id: {{review_id}} /n
-        Input camera: {{input_camera}} /n
+        Input cameras: {{input_camera}} /n
         Camera triggered: {{input_camera_name}} /n  
         Detections ID's: {{detections}} /n 
         Detection 1 ID: {{id}} /n 
@@ -866,18 +867,18 @@ variables:
   type: "{{event['type']}}"
   review_id: "{{event['after']['id']}}"
   input_camera_name: >-
-    {{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}
+    {{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}
   camera: "{{event['after']['camera']}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
-  camera_match: "{{input_camera_name|select('equalto', camera)|list|length>0 }}"
+  camera_match: "{{ camera in input_camera_name }}"
   detections: "{{ event['after']['data']['detections'] }}"
   id: "{{ detections[0] }}"
   objects: "{{ event['after']['data']['objects']}}"
   objects_match: >-
-    {{input_objects | length == 0 or (input_objects |select('in', objects) |list |length > 0) }}
+    {{ input_objects | length == 0 or (input_objects | select('in', objects) | list | length > 0) }}
   sub_labels: "{{ event['after']['data']['sub_labels']}}"
   sub_labels_match: >-    
-    {{input_sub_labels | length == 0 or (input_sub_labels |select('in', sub_labels) |list |length > 0) }}
+    {{ input_sub_labels | length == 0 or (input_sub_labels | select('in', sub_labels) | list | length > 0) }}
   zone_names: >-
     {% set device_zones = input_zones %}
     {% set zones = device_zones + custom_zones %}
@@ -895,13 +896,13 @@ variables:
   before_zones: "{{ event['before']['data']['zones'] | lower | default([]) }}"
   after_zones: "{{ event['after']['data']['zones'] | lower | default([]) }}"
   zone_entered: >-
-    {{ zone_names | length == 0 or ((zone_names | select('in', (before_zones + after_zones)) |list |length) > 0) }}
+    {{ zone_names | length == 0 or ((zone_names | select('in', (before_zones + after_zones)) | list | length) > 0) }}
   all_zones_entered: >-
-    {{true if (zone_names | reject('in', (before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
-  zone_match: "{{zone_entered and all_zones_entered}}"
+    {{ true if (zone_names | reject('in', (before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
+  zone_match: "{{ zone_entered and all_zones_entered }}"
   input_severity: !input in_severity
-  severity: "{{event['before']['severity'] + event['after']['severity']}}"
-  severity_match: "{{input_severity|select('in', severity)|list|length > 0}}"
+  severity: "{{ event['before']['severity'] + event['after']['severity'] }}"
+  severity_match: "{{ input_severity | select('in', severity) | list | length > 0 }}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
     {% for device_id in notify_devices %}
@@ -911,21 +912,21 @@ variables:
     {% endfor %} 
     {{ ns.device_names }}
   root_dir: >-
-    {% set dir = downloader|trim %}
-    {% if dir|length > 0 %}
+    {% set dir = downloader | trim %}
+    {% if dir | length > 0 %}
       {% if dir[-1] != "/" %}
         {% set dir = dir + "/" %}
       {% endif %}
     {% endif %}
-    {{dir}}
+    {{ dir }}
   sub_dir: >-
-    {% set dir = downloader_sub|trim %}
-    {% if dir|length > 0 %}
+    {% set dir = downloader_sub | trim %}
+    {% if dir | length > 0 %}
       {% if dir[-1] != "/" %}
         {% set dir = dir + "/" %}
       {% endif %}
     {% endif %}
-    {{dir}}
+    {{ dir }}
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
   thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
@@ -939,3 +940,4 @@ variables:
   action2: !input in_action2
 mode: parallel
 max: 4
+```
