@@ -221,7 +221,7 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(\',\')|replace(\'_\', \' \')}} Alert"
+          default: "{{camera_name}} - {{sub_labels| join(\'\')|replace(\'_\', \' \')}} Alert"
           selector:
             text:
         in_custom_msg:
@@ -241,13 +241,7 @@ blueprint:
         prompt:
           name: Default Prompt 
           description: Model prompt for objects not specified below.
-          default: Summarise the image in a 1 sentence response,
-                   concentrate on the {{input_objects| join(\',\')|replace(\'_\', \' \')}} if seen within
-                   the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}}. 
-                   Any person approaching the camera should take priority over all other events.
-                   If you see a known person from memory, mention this in the response.
-                   Do not mention the prompt or describe the environment in your response.
-                   The response is an intial alert for a mobile phone security notification. 
+          default: "Summarise the image in a 1 sentence response, concentrate on the {{input_objects| join(\'\')|replace(\'_\', \' \')}} if seen within the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}}. Any person approaching the camera should take priority over all other events. If you see a known person from memory, mention this in the response. Do not mention the prompt or describe the environment in your response. The response is an intial alert for a mobile phone security notification."
           selector:
             text:
               multiline: true
@@ -359,7 +353,7 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(\',\')|replace(\'_\', \' \')}} Alert Update"
+          default: "{{camera_name}} - {{sub_labels| join(\'\')|replace(\'_\', \' \')}} Alert Update"
           selector:
             text:
               multiline: false
@@ -367,13 +361,7 @@ blueprint:
         prompt2:
           name: Default Prompt 
           description: Model prompt for objects not specified below.
-          default: Analyse the video clip which should contain the following objects {{input_objects| join(\',\')|replace(\'_\', \' \')}}
-                   The areas of interest are the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}}
-                   Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-                   Consider what the {{input_objects|join(\',\')|replace(\'_\',\' \')}} is doing, why, and what it might do next.
-                   Do not mention the prompt or describe the environment in your response.  
-                   Your response will be used for a mobile phone notification message with the clip attached.
-                  
+          default: "Analyse the video clip which should contain the following objects {{input_objects| join(\'\')|replace(\'_\', \' \')}} The areas of interest are the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}} Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing. Consider what the {{input_objects|join(\'\')|replace(\'_\',\' \')}} is doing, why, and what it might do next. Do not mention the prompt or describe the environment in your response. Your response will be used for a mobile phone notification message with the clip attached."
           selector:
             text:
               multiline: true
@@ -485,7 +473,6 @@ blueprint:
               max: 60
               step: 1
               mode: slider
-
               
     Downloader:
       name: Downloader Options
@@ -549,7 +536,7 @@ blueprint:
           description: The Telegram bot to send notifications through.
           selector:
             entity:
-              integration: telegram_bot
+              domain: telegram_bot
               multiple: false
         in_telegram_chat_id:
           name: Telegram Chat ID
@@ -634,12 +621,12 @@ triggers:
   - trigger: mqtt
     topic: "{{frigate_topic}}"
     payload: new
-    value_template: "{{value_json[\'type\']}}"
+    value_template: "{{value_json[\"type\"]}}"
     id: New event
   - trigger: mqtt
     topic: "{{frigate_topic}}"
     payload: end
-    value_template: "{{value_json[\'type\']}}"
+    value_template: "{{value_json[\"type\"]}}"
     id: End event
 conditions:
   - condition: template
@@ -668,7 +655,7 @@ actions:
         Review id: {{review_id}} /n
         Input camera: {{input_camera}} /n
         Camera triggered: {{input_camera_name}} /n  
-        Detections ID\'s: {{detections}} /n 
+        Detections ID\"s: {{detections}} /n 
         Detection 1 ID: {{id}} /n 
         Objects required: {{input_objects}} /n 
         Objects found: {{objects}} /n
@@ -730,7 +717,7 @@ actions:
               - alias: If file exists run LLM Image Analyzer and send notification
                 if:
                   - condition: template
-                    value_template: "{{ wait.trigger.id == \'image_exists\' }}"
+                    value_template: "{{ wait.trigger.id == \"image_exists\" }}"
                 then:
                   - delay:
                       hours: 0
@@ -739,16 +726,16 @@ actions:
                       milliseconds: 0
                   - variables:
                       selected_prompt: >
-                        {% set object_found = objects[0] if objects | length > 0 else 'none' %}
-                        {% if object_found == 'car' %}
+                        {% set object_found = objects[0] if objects | length > 0 else \'none\' %}
+                        {% if object_found == \'car\' %}
                           {{ prompt_car }}
-                        {% elif object_found == 'person' %}
+                        {% elif object_found == \'person\' %}
                           {{ prompt_person }}
-                        {% elif object_found == 'cat' %}
+                        {% elif object_found == \'cat\' %}
                           {{ prompt_cat }}
-                        {% elif object_found == 'dog' %}
+                        {% elif object_found == \'dog\' %}
                           {{ prompt_dog }}
-                        {% elif object_found == 'bird' %}
+                        {% elif object_found == \'bird\' %}
                           {{ prompt_bird }}
                         {% else %}
                           {{ prompt }}
@@ -820,7 +807,7 @@ actions:
                 alias: Cooldown
             until:
               - condition: template
-                value_template: "{{wait.trigger.id == \'image_exists\' or repeat.index == 2}}"
+                value_template: "{{wait.trigger.id == \"image_exists\" or repeat.index == 2}}"
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
@@ -868,23 +855,23 @@ actions:
                   milliseconds: 0
               - variables:
                   selected_prompt2: >
-                    {% set object_found = objects[0] if objects | length > 0 else 'none' %}
-                    {% if object_found == 'car' %}
+                    {% set object_found = objects[0] if objects | length > 0 else \'none\' %}
+                    {% if object_found == \'car\' %}
                       {{ prompt2_car }}
-                    {% elif object_found == 'person' %}
+                    {% elif object_found == \'person\' %}
                       {{ prompt2_person }}
-                    {% elif object_found == 'cat' %}
+                    {% elif object_found == \'cat\' %}
                       {{ prompt2_cat }}
-                    {% elif object_found == 'dog' %}
+                    {% elif object_found == \'dog\' %}
                       {{ prompt2_dog }}
-                    {% elif object_found == 'bird' %}
+                    {% elif object_found == \'bird\' %}
                       {{ prompt2_bird }}
                     {% else %}
                       {{ prompt2 }}
                     {% endif %}
               - if:
                   - condition: template
-                    value_template: "{{wait.trigger.id == \'clip_exists\'}}"
+                    value_template: "{{wait.trigger.id == \"clip_exists\"}}"
                 then:
                   - action: llmvision.video_analyzer
                     metadata: {}
@@ -947,7 +934,7 @@ actions:
                     alias: Cooldown
             until:
               - condition: template
-                value_template: "{{wait.trigger.id == \'clip_exists\' or repeat.index == 2}}"
+                value_template: "{{wait.trigger.id == \"clip_exists\" or repeat.index == 2}}"
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
@@ -966,21 +953,21 @@ variables:
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
   event: "{{ trigger.payload_json }}"
-  type: "{{event[\'type\']}}"
-  review_id: "{{event[\'after\'][\'id\']}}"
+  type: "{{event[\"type\"]}}"
+  review_id: "{{event[\"after\"][\"id\"]}}"
   input_camera_name: >-
     {{input_camera|expand|map(attribute=\'attributes.camera_name\',\
     default=\'none\')|list}}
-  camera: "{{event[\'after\'][\'camera\']}}"
+  camera: "{{event[\"after\"][\"camera\"]}}"
   camera_name: "{{ camera | replace(\'_\', \' \') | title }}"
   camera_match: "{{input_camera_name|select(\'equalto\', camera)|list|length>0 }}"
-  detections: "{{ event[\'after\'][\'data\'][\'detections\'] }}"
+  detections: "{{ event[\"after\"][\"data\"][\"detections\"] }}"
   id: "{{ detections[0] }}"
-  objects: "{{ event[\'after\'][\'data\'][\'objects\']}}"
+  objects: "{{ event[\"after\"][\"data\"][\"objects\"]}}"
   objects_match: >-
     {{input_objects | length == 0 or (input_objects |select(\'in\', objects) |list\
     |length > 0) }}
-  sub_labels: "{{ event[\'after\'][\'data\'][\'sub_labels\']}}"
+  sub_labels: "{{ event[\"after\"][\"data\"][\"sub_labels\"]}}"
   sub_labels_match: >-    
     {{input_sub_labels | length == 0 or (input_sub_labels |select(\'in\', sub_labels) |list\
     |length > 0) }}
@@ -998,15 +985,15 @@ variables:
         {% endif %} 
         {% endfor %} 
         {{ ns.device_names }}
-  before_zones: "{{ event[\'before\'][\'data\'][\'zones\'] | lower | default([]) }}"
-  after_zones: "{{ event[\'after\'][\'data\'][\'zones\'] | lower | default([]) }}"
+  before_zones: "{{ event[\"before\"][\"data\"][\"zones\"] | lower | default([]) }}"
+  after_zones: "{{ event[\"after\"][\"data\"][\"zones\"] | lower | default([]) }}"
   zone_entered: >-
     {{ zone_names | length == 0 or ((zone_names | select(\'in\', (before_zones + after_zones)) |list |length) > 0) }}
   all_zones_entered: >-
     {{true if (zone_names | reject(\'in\',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{zone_entered and all_zones_entered}}"
   input_severity: !input in_severity
-  severity: "{{event[\'before\'][\'severity\'] + event[\'after\'][\'severity\']}}"
+  severity: "{{event[\"before\"][\"severity\"] + event[\"after\"][\"severity\"]}}"
   severity_match: "{{input_severity|select(\'in\', severity)|list|length > 0}}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
@@ -1045,4 +1032,3 @@ variables:
   action2: !input in_action2
 mode: parallel
 max: 4
-
