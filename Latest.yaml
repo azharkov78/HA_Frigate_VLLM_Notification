@@ -1,4 +1,3 @@
-```yaml
 blueprint:
   name: Frigate LLM Notification with Telegram (v0.45)
   author: whag (modified by Grok)
@@ -940,4 +939,3 @@ variables:
   action2: !input in_action2
 mode: parallel
 max: 4
-```
