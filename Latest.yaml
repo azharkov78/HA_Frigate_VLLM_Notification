@@ -270,7 +270,7 @@ actions:
                   data:
                     overwrite: true
                     url: "{{ host }}/api/frigate/notifications/{{ event_id }}/snapshot.jpg"
-                    subdir: ""
+                    subdir: "frigate"
                     filename: "{{ event_id }}_snapshot.jpg"
                 - wait_for_trigger:
                     - trigger: event
@@ -350,7 +350,7 @@ actions:
                   data:
                     overwrite: true
                     url: "{{ host }}/api/frigate/notifications/{{ event_id }}/{{ camera }}/clip.mp4"
-                    subdir: ""
+                    subdir: "frigate"
                     filename: "{{ event_id }}_clip.mp4"
                 - wait_for_trigger:
                     - trigger: event
