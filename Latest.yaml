@@ -235,7 +235,7 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If using LLM for image analysis and want an AI-generated title, ensure [Generate Title] below is enabled.
-          default: "{{ camera_name | default('Camera') }} - {{ sub_labels | default([]) | join(', ') | replace('_', ' ') | default('Alert') }}"
+          default: "{{ camera_name | default('Camera') }} - {{ sub_labels | default([]) | join(', ') | replace('underscore', ' ') | default('Alert') }}"
           selector:
             text:
         in_custom_msg:
@@ -243,16 +243,16 @@ blueprint:
           description: Initial notification message if not using LLM Vision for the snapshot analysis.
           default: >-
             {% set obj_list = objects | default([]) %}
-            {% set zone_list = after_zones | default([]) | join(' and the ') | replace('_', ' ') | default('specified area') %}
+            {% set zone_list = after_zones | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
-              {% set name = obj | replace('_', ' ') %}
+              {% set name = obj | replace('underscore', ' ') %}
               {% if object_set == 'localized' and obj in object_map %}
                 {% set name = object_map[obj] %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
             {% endfor %}
-            {{ 'A ' + (formatted_objects | join(' and a ') if formatted_objects else 'object') + ' was detected in the ' + zone_list }}
+            {{ 'A ' + (formatted_objects | join(' and ') if formatted_objects else 'object') + ' was detected in the ' + zone_list }}
           selector:
             text:
               multiline: true
@@ -264,26 +264,33 @@ blueprint:
           selector:
             boolean: {}
         prompt:
-          name: Prompt 
-          description: Model prompt (overridden by object-specific prompts defined in the automation).
+          name: Default Prompt
+          description: Default model prompt for snapshot analysis if no object-specific prompt is defined.
           default: >-
             {% set obj_list = input_objects | default([]) %}
-            {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
-              {% set name = obj | replace('_', ' ') %}
+              {% set name = obj | replace('underscore', ' ') %}
               {% if object_set == 'localized' and obj in object_map %}
                 {% set name = object_map[obj] %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
             {% endfor %}
-            Summarise the image in a 1 sentence response,
-            concentrate on the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} if seen within
-            the {{ zone_list }}. 
+            {% set objects_str = formatted_objects | join(', ') if formatted_objects | length > 0 else 'objects' %}
+            Summarise the image in a 1 sentence response, concentrating on the {{ objects_str }} if seen within the {{ zone_list }}. 
             Any person approaching the camera should take priority over all other events.
             If you see a known person from memory, mention this in the response.
             Do not mention the prompt or describe the environment in your response.
-            The response is an initial alert for a mobile phone security notification. 
+            The response is an initial alert for a mobile phone security notification.
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        custom_object_prompts:
+          name: Custom Object Prompts
+          description: Define custom prompts for specific objects (e.g., '{"person": "Summarize person approaching camera...", "car": "Describe car movement..."}'). Leave empty to use default prompt.
+          default: "{}"
           selector:
             text:
               multiline: true
@@ -351,31 +358,40 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description: Notification title for review clip. If you want an AI-generated title, ensure [Generate Title] below is enabled.
-          default: "{{ camera_name | default('Camera') }} - {{ sub_labels | default([]) | join(', ') | replace('_', ' ') | default('Alert Update') }}"
+          default: "{{ camera_name | default('Camera') }} - {{ sub_labels | default([]) | join(', ') | replace('underscore', ' ') | default('Alert Update') }}"
           selector:
             text:
               multiline: false
               multiple: false
         prompt2:
-          name: Prompt 
-          description: Model prompt (overridden by object-specific prompts defined in the automation).
+          name: Default Prompt
+          description: Default model prompt for clip analysis if no object-specific prompt is defined.
           default: >-
             {% set obj_list = input_objects | default([]) %}
-            {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
-              {% set name = obj | replace('_', ' ') %}
+              {% set name = obj | replace('underscore', ' ') %}
               {% if object_set == 'localized' and obj in object_map %}
                 {% set name = object_map[obj] %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
             {% endfor %}
-            Analyse the video clip which should contain the following objects {{ formatted_objects | join(', ') if formatted_objects else 'objects' }}.
+            {% set objects_str = formatted_objects | join(', ') if formatted_objects | length > 0 else 'objects' %}
+            Analyse the video clip which should contain the following objects {{ objects_str }}.
             The areas of interest are the {{ zone_list }}.
             Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-            Consider what the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} is doing, why, and what it might do next.
+            Consider what the {{ objects_str }} is doing, why, and what it might do next.
             Do not mention the prompt or describe the environment in your response.  
             Your response will be used for a mobile phone notification message with the clip attached.
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        custom_object_prompts_clip:
+          name: Custom Object Prompts for Clips
+          description: Define custom prompts for specific objects in video clips (e.g., '{"person": "Analyze person actions...", "car": "Describe car movement..."}'). Leave empty to use default prompt.
+          default: "{}"
           selector:
             text:
               multiline: true
@@ -928,7 +944,7 @@ variables:
   input_camera_name: >-
     {{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}
   camera: "{{event['after']['camera'] | default('unknown')}}"
-  camera_name: "{{ camera | replace('_', ' ') | title | default('Camera') }}"
+  camera_name: "{{ camera | replace('underscore', ' ') | title | default('Camera') }}"
   camera_match: "{{ camera in input_camera_name }}"
   detections: "{{ event['after']['data']['detections'] | default([]) }}"
   id: "{{ detections[0] | default('unknown') }}"
@@ -952,7 +968,7 @@ variables:
     {% set obj_list = event['after']['data']['objects'] | default([]) %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
-      {% set name = obj | replace('_', ' ') %}
+      {% set name = obj | replace('underscore', ' ') %}
       {% if object_set == 'localized' and obj in object_map %}
         {% set name = object_map[obj] %}
       {% endif %}
@@ -1023,55 +1039,49 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
-  object_prompts: >-
-    {
-      "person": "Sumobject_prompts: >-
-    {
-      "person": "Summarize the image in a 1 sentence response, focusing on any person approaching the camera in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. If a known person is recognized from memory, include their identity in the response. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
-      "car": "Summarize the image in a 1 sentence response, focusing on any car entering or moving in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the car's color or type if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
-      "dog": "Summarize the image in a 1 sentence response, focusing on any dog in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Mention the dog's behavior (e.g., running, sitting) if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
-      "cat": "Summarize the image in a 1 sentence response, focusing on any cat in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Mention the cat's behavior or appearance if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification."
-    }
-  object_prompts_clip: >-
-    {
-      "person": "Analyze the video clip, focusing on any person in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe what the person is doing, why, and what they might do next. If a known person is recognized from memory, include their identity. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
-      "car": "Analyze the video clip, focusing on any car in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the car's movement, color, or type, and predict its next action. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
-      "dog": "Analyze the video clip, focusing on any dog in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the dog's actions (e.g., running, barking) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
-      "cat": "Analyze the video clip, focusing on any cat in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the cat's actions (e.g., walking, hiding) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached."
-    }
+  custom_object_prompts: >-
+    {% set user_input = input('custom_object_prompts') | default('{}') %}
+    {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
+    {{ parsed }}
+  custom_object_prompts_clip: >-
+    {% set user_input = input('custom_object_prompts_clip') | default('{}') %}
+    {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
+    {{ parsed }}
   selected_prompt: >-
     {% set obj_list = input_objects | default([]) %}
-    {% set zone_list = zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') %}
+    {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
-      {% set name = obj | replace('_', ' ') %}
+      {% set name = obj | replace('underscore', ' ') %}
       {% if object_set == 'localized' and obj in object_map %}
         {% set name = object_map[obj] %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
     {% endfor %}
-    {% set objects_str = formatted_objects | join(', ') if formatted_objects else 'objects' %}
-    {% if obj_list | length > 0 and obj_list[0] in object_prompts %}
-      {{ object_prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}', zone_list) }}
+    {% set objects_str = formatted_objects | join(', ') if formatted_objects | length > 0 else 'objects' %}
+    {% set prompts = custom_object_prompts | default({}) %}
+    {% if obj_list | length > 0 and obj_list[0] in prompts %}
+      {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      Summarise the image in a 1 sentence response, concentrating on the {{ objects_str }} if seen within the {{ zone_list }}. Any person approaching the camera should take priority over all other events. If you see a known person from memory, mention this in the response. Do not mention the prompt or describe the environment in your response. The response is an initial alert for a mobile phone security notification.
+      {{ input('prompt') }}
     {% endif %}
   selected_prompt2: >-
     {% set obj_list = input_objects | default([]) %}
-    {% set zone_list = zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') %}
+    {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
-      {% set name = obj | replace('_', ' ') %}
+      {% set name = obj | replace('underscore', ' ') %}
       {% if object_set == 'localized' and obj in object_map %}
         {% set name = object_map[obj] %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
     {% endfor %}
-    {% set objects_str = formatted_objects | join(', ') if formatted_objects else 'objects' %}
-    {% if obj_list | length > 0 and obj_list[0] in object_prompts_clip %}
-      {{ object_prompts_clip[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}', zone_list) }}
+    {% set objects_str = formatted_objects | join(', ') if formatted_objects | length > 0 else 'objects' %}
+    {% set prompts = custom_object_prompts_clip | default({}) %}
+    {% if obj_list | length > 0 and obj_list[0] in prompts %}
+      {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      Analyse the video clip which should contain the following objects {{ objects_str }}. The areas of interest are the {{ zone_list }}. Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing. Consider what the {{ objects_str }} is doing, why, and what it might do next. Do not mention the prompt or describe the environment in your response. The response will be used for a mobile phone notification message with the clip attached.
+      {{ input('prompt2') }}
     {% endif %}
 mode: parallel
 max: 4
