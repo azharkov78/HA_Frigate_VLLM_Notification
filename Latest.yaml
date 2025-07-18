@@ -1,9 +1,10 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.60)
+  name: Frigate LLM Notification with Telegram (v0.62)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
-     - Home Assistant 2023.7 or later for JSON parsing support.<br />
+     - Home Assistant 2023.7 or later for JSON parsing support (required for full functionality; without it, event data and custom prompts will be ignored).<br />
+     - If JSON parsing errors persist, check logs and ensure MQTT/Frigate integrations are correctly configured.<br />
      - Home Assistant with an MQTT broker setup.<br />
      - Frigate integration with MQTT setup.<br />
      Link: https://github.com/blakeblackshear/frigate-hass-integration <br />
@@ -38,7 +39,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v0.60
+     Version: v0.62
 
   domain: automation
   input:
@@ -248,8 +249,21 @@ blueprint:
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
               {% set name = obj | replace('underscore', ' ') %}
-              {% if object_set == 'localized' and obj in object_map %}
-                {% set name = object_map[obj] %}
+              {% if object_set == 'localized' %}
+                {% set object_map = {
+                  "person": "ЧЕЛОВЕК",
+                  "cat": "КОШКА",
+                  "dog": "СОБАКА",
+                  "bird": "ПТИЦА",
+                  "car": "МАШИНА",
+                  "bicycle": "ВЕЛОСИПЕД",
+                  "motorcycle": "МОТОЦИКЛ",
+                  "bus": "АВТОБУС",
+                  "truck": "ГРУЗОВИК"
+                } %}
+                {% if obj in object_map %}
+                  {% set name = object_map[obj] %}
+                {% endif %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
             {% endfor %}
@@ -273,8 +287,21 @@ blueprint:
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
               {% set name = obj | replace('underscore', ' ') %}
-              {% if object_set == 'localized' and object_map is defined and obj in object_map %}
-                {% set name = object_map[obj] %}
+              {% if object_set == 'localized' %}
+                {% set object_map = {
+                  "person": "ЧЕЛОВЕК",
+                  "cat": "КОШКА",
+                  "dog": "СОБАКА",
+                  "bird": "ПТИЦА",
+                  "car": "МАШИНА",
+                  "bicycle": "ВЕЛОСИПЕД",
+                  "motorcycle": "МОТОЦИКЛ",
+                  "bus": "АВТОБУС",
+                  "truck": "ГРУЗОВИК"
+                } %}
+                {% if obj in object_map %}
+                  {% set name = object_map[obj] %}
+                {% endif %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
             {% endfor %}
@@ -376,8 +403,21 @@ blueprint:
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
               {% set name = obj | replace('underscore', ' ') %}
-              {% if object_set == 'localized' and object_map is defined and obj in object_map %}
-                {% set name = object_map[obj] %}
+              {% if object_set == 'localized' %}
+                {% set object_map = {
+                  "person": "ЧЕЛОВЕК",
+                  "cat": "КОШКА",
+                  "dog": "СОБАКА",
+                  "bird": "ПТИЦА",
+                  "car": "МАШИНА",
+                  "bicycle": "ВЕЛОСИПЕД",
+                  "motorcycle": "МОТОЦИКЛ",
+                  "bus": "АВТОБУС",
+                  "truck": "ГРУЗОВИК"
+                } %}
+                {% if obj in object_map %}
+                  {% set name = object_map[obj] %}
+                {% endif %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
             {% endfor %}
@@ -952,16 +992,11 @@ variables:
   event: >-
     {% set json_string = trigger.payload_json | default('{}') %}
     {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% set parsed = {} %}
-    {% if 'from_json' is defined %}
-      {% set parsed = from_json(cleaned_json) | default({}, true) %}
-    {% else %}
-      {{ log('Warning: from_json filter is undefined. Please upgrade Home Assistant to 2023.7 or later for full functionality.', level='warning') }}
-      {% set parsed = {} %}
-    {% endif %}
-    {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
+    {% set parsed = from_json(cleaned_json) | default({}, true) %}
+    {% if parsed is mapping %}
       {{ parsed }}
     {% else %}
+      {{ log('Warning: Failed to parse trigger.payload_json. Check MQTT payload for errors.', level='warning') }}
       {}
     {% endif %}
   type: "{{ event['type'] | default('unknown') if event is mapping else 'unknown' }}"
@@ -1066,32 +1101,43 @@ variables:
   action2: !input in_action2
   custom_object_prompts: >-
     {% set user_input = custom_object_prompts_input | default('{}') %}
-    {% set parsed = {} %}
-    {% if 'from_json' is defined %}
-      {% set parsed = from_json(user_input) | default({}, true) %}
+    {% set parsed = from_json(user_input) | default({}, true) %}
+    {% if parsed is mapping %}
+      {{ parsed }}
     {% else %}
-      {{ log('Warning: from_json filter is undefined for custom_object_prompts. Please upgrade Home Assistant to 2023.7 or later.', level='warning') }}
-      {% set parsed = {} %}
+      {{ log('Warning: Failed to parse custom_object_prompts. Check JSON format in input.', level='warning') }}
+      {}
     {% endif %}
-    {{ parsed }}
   custom_object_prompts_clip: >-
     {% set user_input = custom_object_prompts_clip_input | default('{}') %}
-    {% set parsed = {} %}
-    {% if 'from_json' is defined %}
-      {% set parsed = from_json(user_input) | default({}, true) %}
+    {% set parsed = from_json(user_input) | default({}, true) %}
+    {% if parsed is mapping %}
+      {{ parsed }}
     {% else %}
-      {{ log('Warning: from_json filter is undefined for custom_object_prompts_clip. Please upgrade Home Assistant to 2023.7 or later.', level='warning') }}
-      {% set parsed = {} %}
+      {{ log('Warning: Failed to parse custom_object_prompts_clip. Check JSON format in input.', level='warning') }}
+      {}
     {% endif %}
-    {{ parsed }}
   selected_prompt: >-
     {% set obj_list = input_objects | default([]) %}
     {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('underscore', ' ') %}
-      {% if object_set == 'localized' and object_map is defined and obj in object_map %}
-        {% set name = object_map[obj] %}
+      {% if object_set == 'localized' %}
+        {% set object_map = {
+          "person": "ЧЕЛОВЕК",
+          "cat": "КОШКА",
+          "dog": "СОБАКА",
+          "bird": "ПТИЦА",
+          "car": "МАШИНА",
+          "bicycle": "ВЕЛОСИПЕД",
+          "motorcycle": "МОТОЦИКЛ",
+          "bus": "АВТОБУС",
+          "truck": "ГРУЗОВИК"
+        } %}
+        {% if obj in object_map %}
+          {% set name = object_map[obj] %}
+        {% endif %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
     {% endfor %}
@@ -1108,8 +1154,35 @@ variables:
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('underscore', ' ') %}
-      {% if object_set == 'localized' and object_map is defined and obj in object_map %}
-        {% set name = object_map[obj] %}
+      {% if�
+
+System: The response was cut off due to exceeding the maximum length. Below is a continuation and completion of the corrected blueprint, along with detailed instructions to resolve the errors and use the blueprint with your Home Assistant 2025.7.2 setup.
+
+### Continuation of Corrected Blueprint
+Below is the completion of the `frigate_llm_notification.yaml` blueprint (`v0.62`), continuing from the `selected_prompt2` variable in the `variables` section, ensuring all errors are addressed.
+
+<xaiArtifact artifact_id="3a68f99c-125e-4f90-a298-1aa970b2815f" artifact_version_id="b9323710-f4d9-4cd6-98b2-c2cce615323b" title="frigate_llm_notification.yaml" contentType="text/yaml">
+  selected_prompt2: >-
+    {% set obj_list = input_objects | default([]) %}
+    {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
+    {% set formatted_objects = [] %}
+    {% for obj in obj_list %}
+      {% set name = obj | replace('underscore', ' ') %}
+      {% if object_set == 'localized' %}
+        {% set object_map = {
+          "person": "ЧЕЛОВЕК",
+          "cat": "КОШКА",
+          "dog": "СОБАКА",
+          "bird": "ПТИЦА",
+          "car": "МАШИНА",
+          "bicycle": "ВЕЛОСИПЕД",
+          "motorcycle": "МОТОЦИКЛ",
+          "bus": "АВТОБУС",
+          "truck": "ГРУЗОВИК"
+        } %}
+        {% if obj in object_map %}
+          {% set name = object_map[obj] %}
+        {% endif %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
     {% endfor %}
