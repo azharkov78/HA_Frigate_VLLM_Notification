@@ -992,11 +992,14 @@ variables:
   event: >-
     {% set json_string = trigger.payload_json | default('{}') %}
     {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% set parsed = from_json(cleaned_json) | default({}, true) %}
-    {% if parsed is mapping %}
-      {{ parsed }}
+    {% if trigger is defined and trigger.payload_json is defined %}
+      {% if is_state_attr('input_text.temp_json', 'text') %}
+        {{ state_attr('input_text.temp_json', 'text') | from_json }}
+      {% else %}
+        {% set temp = {'text': cleaned_json} %}
+        {{ temp.text | from_json | default({}, true) }}
+      {% endif %}
     {% else %}
-      {{ log('Warning: Failed to parse trigger.payload_json. Check MQTT payload for errors.', level='warning') }}
       {}
     {% endif %}
   type: "{{ event['type'] | default('unknown') if event is mapping else 'unknown' }}"
@@ -1148,20 +1151,6 @@ variables:
     {% else %}
       {{ prompt_input }}
     {% endif %}
-  selected_prompt2: >-
-    {% set obj_list = input_objects | default([]) %}
-    {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
-    {% set formatted_objects = [] %}
-    {% for obj in obj_list %}
-      {% set name = obj | replace('underscore', ' ') %}
-      {% if�
-
-System: The response was cut off due to exceeding the maximum length. Below is a continuation and completion of the corrected blueprint, along with detailed instructions to resolve the errors and use the blueprint with your Home Assistant 2025.7.2 setup.
-
-### Continuation of Corrected Blueprint
-Below is the completion of the `frigate_llm_notification.yaml` blueprint (`v0.62`), continuing from the `selected_prompt2` variable in the `variables` section, ensuring all errors are addressed.
-
-<xaiArtifact artifact_id="3a68f99c-125e-4f90-a298-1aa970b2815f" artifact_version_id="b9323710-f4d9-4cd6-98b2-c2cce615323b" title="frigate_llm_notification.yaml" contentType="text/yaml">
   selected_prompt2: >-
     {% set obj_list = input_objects | default([]) %}
     {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
