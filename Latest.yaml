@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.50)
+  name: Frigate LLM Notification with Telegram (v0.51)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.50
+     Version: v 0.51
 
   domain: automation
   input:
@@ -215,6 +215,15 @@ blueprint:
                 - claude-sonnet-4-20250514
                 - claude-opus-4-20250514
                 - gemini-1.5-flash
+                - gpt-4o
+                - gpt-4o-mini
+                - gpt-4.1
+                - claude-3-7-sonnet-latest
+                - claude-3-5-sonnet-latest
+                - claude-3-5-haiku-latest
+                - claude-sonnet-4-20250514
+                - claude-opus-4-20250514
+                - gemini-1.5-flash
                 - gemini-1.5-pro
                 - gemini-2.0-flash
                 - gemini-2.0-flash-lite
@@ -235,16 +244,17 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If using LLM for image analysis and want an AI-generated title, ensure [Generate Title] below is enabled.
-          default: "{{camera_name | default('Camera')}} - {{sub_labels | join(', ') | replace('_', ' ') | default('Alert')}}"
+          default: "{{ camera_name | default('Camera') }} - {{ sub_labels | default([]) | join(', ') | replace('_', ' ') | default('Alert') }}"
           selector:
             text:
         in_custom_msg:
           name: No AI Notification Message
           description: Initial notification message if not using LLM Vision for the snapshot analysis.
           default: >-
-            {% set obj_list = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in objects] %}
-            {% set zone_list = after_zones | join(' and the ') | replace('_', ' ') | default('specified area') %}
-            {{ 'A ' + (obj_list | join(' and a ') if obj_list else 'object') + ' was detected in the ' + zone_list }}
+            {% set obj_list = objects | default([]) %}
+            {% set formatted_objects = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in obj_list] %}
+            {% set zone_list = after_zones | default([]) | join(' and the ') | replace('_', ' ') | default('specified area') %}
+            {{ 'A ' + (formatted_objects | join(' and a ') if formatted_objects else 'object') + ' was detected in the ' + zone_list }}
           selector:
             text:
               multiline: true
@@ -259,10 +269,11 @@ blueprint:
           name: Prompt 
           description: Model prompt.
           default: >-
-            {% set obj_list = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] %}
-            {% set zone_list = zone_names | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            {% set obj_list = input_objects | default([]) %}
+            {% set formatted_objects = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in obj_list] %}
+            {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
             Summarise the image in a 1 sentence response,
-            concentrate on the {{ obj_list | join(', ') if obj_list else 'objects' }} if seen within
+            concentrate on the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} if seen within
             the {{ zone_list }}. 
             Any person approaching the camera should take priority over all other events.
             If you see a known person from memory, mention this in the response.
@@ -335,7 +346,7 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description: Notification title for review clip. If you want an AI-generated title, ensure [Generate Title] below is enabled.
-          default: "{{camera_name | default('Camera')}} - {{sub_labels | join(', ') | replace('_', ' ') | default('Alert Update')}}"
+          default: "{{ camera_name | default('Camera') }} - {{ sub_labels | default([]) | join(', ') | replace('_', ' ') | default('Alert Update') }}"
           selector:
             text:
               multiline: false
@@ -344,12 +355,13 @@ blueprint:
           name: Prompt 
           description: Model prompt.
           default: >-
-            {% set obj_list = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in input_objects] %}
-            {% set zone_list = zone_names | join(' and ,') | replace('_', ' ') | default('specified area') %}
-            Analyse the video clip which should contain the following objects {{ obj_list | join(', ') if obj_list else 'objects' }}.
+            {% set obj_list = input_objects | default([]) %}
+            {% set formatted_objects = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in obj_list] %}
+            {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            Analyse the video clip which should contain the following objects {{ formatted_objects | join(', ') if formatted_objects else 'objects' }}.
             The areas of interest are the {{ zone_list }}.
             Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-            Consider what the {{ obj_list | join(', ') if obj_list else 'objects' }} is doing, why, and what it might do next.
+            Consider what the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} is doing, why, and what it might do next.
             Do not mention the prompt or describe the environment in your response.  
             Your response will be used for a mobile phone notification message with the clip attached.
           selector:
@@ -716,6 +728,11 @@ actions:
                         - variables:
                             title: "{{ title_image | string | default('Camera Alert') }}"
                             msg: "{{ custom_msg | string | default('Object detected') }}"
+                    - action: logbook.log
+                      metadata: {}
+                      data:
+                        name: Telegram Notification Debug
+                        message: "Title: {{ title | string }}, Msg: {{ msg | string }}"
                     - alias: Send Initial notification to notify devices
                       repeat:
                         for_each: "{{notify_names}}"
@@ -742,7 +759,7 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             photo: "{{host}}{{image}}"
-                            caption: "{{ title + '\n' + msg | default('Camera Alert\nObject detected') }}"
+                            caption: "{{ (title | string) + '\n' + (msg | string) | default('Camera Alert\nObject detected') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                 - delay:
@@ -824,14 +841,22 @@ actions:
                         minutes: 0
                         seconds: 1
                         milliseconds: 0
+                    - variables:
+                        clip_title: "{{ (response.title if gen_title2 else title_clip) | string | default('Camera Alert Update') }}"
+                        clip_msg: "{{ response.response_text | string | default('Clip analyzed') }}"
+                    - action: logbook.log
+                      metadata: {}
+                      data:
+                        name: Telegram Video Notification Debug
+                        message: "Clip Title: {{ clip_title | string }}, Clip Msg: {{ clip_msg | string }}"
                     - alias: Update notification to notify devices
                       repeat:
                         for_each: "{{notify_names}}"
                         sequence:
                           - action: notify.{{ repeat.item }}
                             data:
-                              title: "{{ (response.title if gen_title2 else title_clip) | string | default('Camera Alert Update') }}"
-                              message: "{{ response.response_text | string | default('Clip analyzed') }}"
+                              title: "{{clip_title}}"
+                              message: "{{clip_msg}}"
                               data:
                                 video: "{{gif}}"
                                 image: "{{gif}}"
@@ -852,7 +877,7 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             video: "{{host}}{{video}}"
-                            caption: "{{ (response.title | default(title_clip)) + '\n' + (response.response_text | default('Clip analyzed')) | default('Camera Alert Update\nClip analyzed') }}"
+                            caption: "{{ (clip_title | string) + '\n' + (clip_msg | string) | default('Camera Alert Update\nClip analyzed') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                     - delay:
@@ -889,10 +914,10 @@ variables:
   input_camera_name: >-
     {{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}
   camera: "{{event['after']['camera']}}"
-  camera_name: "{{ camera | replace('_', ' ') | title }}"
+  camera_name: "{{ camera | replace('_', ' ') | title | default('Camera') }}"
   camera_match: "{{ camera in input_camera_name }}"
-  detections: "{{ event['after']['data']['detections'] }}"
-  id: "{{ detections[0] }}"
+  detections: "{{ event['after']['data']['detections'] | default([]) }}"
+  id: "{{ detections[0] | default('unknown') }}"
   object_map: >-
     {% if object_set == 'localized' %}
       {
@@ -911,15 +936,15 @@ variables:
       {}
     {% endif %}
   objects: >-
-    {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in event['after']['data']['objects']] | list }}
+    {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in (event['after']['data']['objects'] | default([]))] | list }}
   objects_match: >-
-    {{ input_objects | length == 0 or (input_objects | select('in', event['after']['data']['objects']) | list | length > 0) }}
+    {{ input_objects | length == 0 or (input_objects | select('in', (event['after']['data']['objects'] | default([]))) | list | length > 0) }}
   sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
   sub_labels_match: >-    
     {{ input_sub_labels | length == 0 or (input_sub_labels | select('in', sub_labels) | list | length > 0) }}
   zone_names: >-
-    {% set device_zones = input_zones %}
-    {% set zones = device_zones + custom_zones %}
+    {% set device_zones = input_zones | default([]) %}
+    {% set zones = device_zones + (custom_zones | default([])) %}
     {% set ns = namespace(device_names=[]) %} 
     {% for device_id in zones %}
     {% if device_attr(device_id, "name") != None %}
@@ -939,18 +964,18 @@ variables:
     {{ true if (zone_names | reject('in', (before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{ zone_entered and all_zones_entered }}"
   input_severity: !input in_severity
-  severity: "{{ event['before']['severity'] + event['after']['severity'] }}"
+  severity: "{{ (event['before']['severity'] | default('') + event['after']['severity'] | default('')) | default('') }}"
   severity_match: "{{ input_severity | select('in', severity) | list | length > 0 }}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
     {% for device_id in notify_devices %}
-      {% set device_name = device_attr(device_id, "name") %}
+      {% set device_name = device_attr(device_id, "name") | default('unknown') %}
       {% set sanitized_name = "mobile_app_" + device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
       {% set ns.device_names = ns.device_names + [sanitized_name] %}
     {% endfor %} 
     {{ ns.device_names }}
   root_dir: >-
-    {% set dir = downloader | trim %}
+    {% set dir = downloader | trim | default('downloader') %}
     {% if dir | length > 0 %}
       {% if dir[-1] != "/" %}
         {% set dir = dir + "/" %}
@@ -958,7 +983,7 @@ variables:
     {% endif %}
     {{ dir }}
   sub_dir: >-
-    {% set dir = downloader_sub | trim %}
+    {% set dir = downloader_sub | trim | default('') %}
     {% if dir | length > 0 %}
       {% if dir[-1] != "/" %}
         {% set dir = dir + "/" %}
