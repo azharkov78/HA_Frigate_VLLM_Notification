@@ -1,33 +1,33 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.59)
+  name: Frigate LLM Notification with Telegram (v0.60)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
-     - Home Assistant with an MQTT broker setup. <br />
-     - Frigate integration with MQTT setup. <br />
+     - Home Assistant 2023.7 or later for JSON parsing support.<br />
+     - Home Assistant with an MQTT broker setup.<br />
+     - Frigate integration with MQTT setup.<br />
      Link: https://github.com/blakeblackshear/frigate-hass-integration <br />
-     - LLM Vision integration with provider setup. <br />
+     - LLM Vision integration with provider setup.<br />
      Link: https://github.com/valentinfrlch/ha-llmvision <br />
-     - Downloader integration. <br />
+     - Downloader integration.<br />
      Link: https://www.home-assistant.io/integrations/downloader/ <br />
-     - Telegram Bot integration setup in Home Assistant. <br />
-     Link: https://www.home-assistant.io/integrations/telegram_bot/ <br />
-     - Home Assistant 2023.7 or later for JSON parsing support. <br /><br />
+     - Telegram Bot integration setup in Home Assistant.<br />
+     Link: https://www.home-assistant.io/integrations/telegram_bot/ <br /><br />
      
      Information:<br />
-     - Supports multiple Frigate cameras, selected via the Frigate Cameras input. <br />
-     - Choose between standard or localized (Russian) object lists for notifications. <br />
-     - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br />
-     - Telegram notifications require a Telegram bot and chat ID configured in Home Assistant. <br /><br />
-     Description: <br />
-     Use LLM Vision to analyze Frigate snapshots and clips, sending notifications via the Home Assistant companion app and Telegram. <br />
-     Monitors MQTT frigate/reviews topic of types [new],[update] and [end]. <br />
-     The Downloader integration is used for storing Frigate files locally before sending to LLM. <br />
-     Note that the downloader folder will need maintenance separately (e.g., old files deleted or backed up). <br />
-     This automation runs in parallel mode. <br /><br />
-     Tested on Android and Telegram. <br /><br />
+     - Supports multiple Frigate cameras, selected via the Frigate Cameras input.<br />
+     - Choose between standard or localized (Russian) object lists for notifications.<br />
+     - LLM Vision requires a provider setup for the automation to function; remember and memory options are optional.<br />
+     - Telegram notifications require a Telegram bot and chat ID configured in Home Assistant.<br /><br />
+     Description:<br />
+     Use LLM Vision to analyze Frigate snapshots and clips, sending notifications via the Home Assistant companion app and Telegram.<br />
+     Monitors MQTT frigate/reviews topic of types [new],[update] and [end].<br />
+     The Downloader integration is used for storing Frigate files locally before sending to LLM.<br />
+     Note that the downloader folder will need maintenance separately (e.g., old files deleted or backed up).<br />
+     This automation runs in parallel mode.<br /><br />
+     Tested on Android and Telegram.<br /><br />
      
-     Variables which may be useful for the custom message and AI prompts
+     Variables which may be useful for the custom message and AI prompts:
        - {{input_objects}} = Objects required<br />
        - {{objects}} = Objects found<br />
        - {{input_camera_name}} = Cameras selected<br />
@@ -38,7 +38,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.59
+     Version: v0.60
 
   domain: automation
   input:
@@ -273,7 +273,7 @@ blueprint:
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
               {% set name = obj | replace('underscore', ' ') %}
-              {% if object_set == 'localized' and obj in object_map %}
+              {% if object_set == 'localized' and object_map is defined and obj in object_map %}
                 {% set name = object_map[obj] %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
@@ -376,7 +376,7 @@ blueprint:
             {% set formatted_objects = [] %}
             {% for obj in obj_list %}
               {% set name = obj | replace('underscore', ' ') %}
-              {% if object_set == 'localized' and obj in object_map %}
+              {% if object_set == 'localized' and object_map is defined and obj in object_map %}
                 {% set name = object_map[obj] %}
               {% endif %}
               {% set formatted_objects = formatted_objects + [name] %}
@@ -956,7 +956,7 @@ variables:
     {% if 'from_json' is defined %}
       {% set parsed = from_json(cleaned_json) | default({}, true) %}
     {% else %}
-      {{ log('Warning: from_json filter is undefined. Please upgrade Home Assistant to 2023.7 or later.', level='warning') }}
+      {{ log('Warning: from_json filter is undefined. Please upgrade Home Assistant to 2023.7 or later for full functionality.', level='warning') }}
       {% set parsed = {} %}
     {% endif %}
     {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
@@ -964,7 +964,7 @@ variables:
     {% else %}
       {}
     {% endif %}
-  type: "{{ event['type'] | default('unknown') }}"
+  type: "{{ event['type'] | default('unknown') if event is mapping else 'unknown' }}"
   review_id: "{{ event['after']['id'] | default('unknown') if event is mapping and 'after' in event else 'unknown' }}"
   input_camera_name: >-
     {{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}
@@ -994,7 +994,7 @@ variables:
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('underscore', ' ') %}
-      {% if object_set == 'localized' and obj in object_map %}
+      {% if object_set == 'localized' and object_map is defined and obj in object_map %}
         {% set name = object_map[obj] %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
@@ -1066,6 +1066,7 @@ variables:
   action2: !input in_action2
   custom_object_prompts: >-
     {% set user_input = custom_object_prompts_input | default('{}') %}
+    {% set parsed = {} %}
     {% if 'from_json' is defined %}
       {% set parsed = from_json(user_input) | default({}, true) %}
     {% else %}
@@ -1075,6 +1076,7 @@ variables:
     {{ parsed }}
   custom_object_prompts_clip: >-
     {% set user_input = custom_object_prompts_clip_input | default('{}') %}
+    {% set parsed = {} %}
     {% if 'from_json' is defined %}
       {% set parsed = from_json(user_input) | default({}, true) %}
     {% else %}
@@ -1088,7 +1090,7 @@ variables:
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('underscore', ' ') %}
-      {% if object_set == 'localized' and obj in object_map %}
+      {% if object_set == 'localized' and object_map is defined and obj in object_map %}
         {% set name = object_map[obj] %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
@@ -1106,7 +1108,7 @@ variables:
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('underscore', ' ') %}
-      {% if object_set == 'localized' and obj in object_map %}
+      {% if object_set == 'localized' and object_map is defined and obj in object_map %}
         {% set name = object_map[obj] %}
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
