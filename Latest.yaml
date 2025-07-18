@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.52)
+  name: Frigate LLM Notification with Telegram (v0.53)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.52
+     Version: v 0.53
 
   domain: automation
   input:
@@ -265,7 +265,7 @@ blueprint:
             boolean: {}
         prompt:
           name: Prompt 
-          description: Model prompt.
+          description: Model prompt (overridden by object-specific prompts defined in the automation).
           default: >-
             {% set obj_list = input_objects | default([]) %}
             {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
@@ -358,7 +358,7 @@ blueprint:
               multiple: false
         prompt2:
           name: Prompt 
-          description: Model prompt.
+          description: Model prompt (overridden by object-specific prompts defined in the automation).
           default: >-
             {% set obj_list = input_objects | default([]) %}
             {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
@@ -722,7 +722,7 @@ actions:
                             expose_images: !input expose_image
                             use_memory: !input use_memory
                             image_file: "{{image_local}}"
-                            message: !input prompt
+                            message: "{{ selected_prompt }}"
                             include_filename: false
                             target_width: !input target_width
                             max_tokens: !input tokens
@@ -771,7 +771,8 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             url: "{{host}}{{image}}"
-                            caption: "{{ title | default('Camera Alert') }}&#10;{{ msg | default('Object detected') }}"
+                            caption: "{{ title | default('Camera Alert') }}
+{{ msg | default('Object detected') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                 - delay:
@@ -846,7 +847,7 @@ actions:
                         target_width: !input target_width2
                         max_tokens: !input tokens2
                         generate_title: "{{gen_title2}}"
-                        message: !input prompt2
+                        message: "{{ selected_prompt2 }}"
                       response_variable: response
                     - delay:
                         hours: 0
@@ -889,7 +890,8 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             url: "{{host}}{{video}}"
-                            caption: "{{ clip_title | default('Camera Alert Update') }}&#10;{{ clip_msg | default('Clip analyzed') }}"
+                            caption: "{{ clip_title | default('Camera Alert Update') }}
+{{ clip_msg | default('Clip analyzed') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                     - delay:
@@ -938,7 +940,6 @@ variables:
         "dog": "СОБАКА",
         "bird": "ПТИЦА",
         "car": "МАШИНА",
-        "face": "ЛИЦО",
         "bicycle": "ВЕЛОСИПЕД",
         "motorcycle": "МОТОЦИКЛ",
         "bus": "АВТОБУС",
@@ -1012,7 +1013,7 @@ variables:
     {% endif %}
     {{ dir }}
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
-  video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
+  video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4
   thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
   image: /api/frigate/notifications/{{id}}/snapshot.jpg
   image_local: "{{root_dir}}{{sub_dir}}{{id}}_snapshot.jpg"
@@ -1022,5 +1023,62 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
+  object_prompts: >-
+    {
+      "person": "Summarize the image in a 1 sentence response, focusing on any person approaching the camera in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. If a known person is recognized from memory, include their identity in the response. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
+      "car": "Summarize the image in a 1 sentence response, focusing on any car entering or moving in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the car's color or type if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
+      "dog": "Summarize the image in a 1 sentence response, focusing on any dog in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Mention the dog's behavior (e.g., running, sitting) if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
+      "cat": "Summarize the image in a 1 sentence response, focusing on any cat in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Mention the cat's behavior or appearance if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification."
+    }
+  object_prompts_clip: >-
+    {
+      "person": "Analyze the video clip, focusing on any person in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe what the person is doing, why, and what they might do next. If a known person is recognized from memory, include their identity. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
+      "car": "Analyze the video clip, focusing on any car in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the car's movement, color, or type, and predict its next action. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
+      "dog": "Analyze the video clip, focusing on any dog in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the dog's actions (e.g., running, barking) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
+      "cat": "Analyze the video clip, focusing on any cat in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the cat's actions (e.g., walking, hiding) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached."
+    }
+  selected_prompt: >-
+    {% set obj_list = input_objects | default([]) %}
+    {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+    {% set formatted_objects = [] %}
+    {% for obj in obj_list %}
+      {% set name = obj | replace('_', ' ') %}
+      {% if object_set == 'localized' and obj in object_map %}
+        {% set name = object_map[obj] %}
+      {% endif %}
+      {% set formatted_objects = formatted_objects + [name] %}
+    {% endfor %}
+    {% if obj_list | length > 0 and obj_list[0] in object_prompts %}
+      {{ object_prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}', zone_list) }}
+    {% else %}
+      Summarise the image in a 1 sentence response,
+      concentrate on the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} if seen within
+      the {{ zone_list }}. 
+      Any person approaching the camera should take priority over all other events.
+      If you see a known person from memory, mention this in the response.
+      Do not mention the prompt or describe the environment in your response.
+      The response is an initial alert for a mobile phone security notification.
+    {% endif %}
+  selected_prompt2: >-
+    {% set obj_list = input_objects | default([]) %}
+    {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+    {% set formatted_objects = [] %}
+    {% for obj in obj_list %}
+      {% set name = obj | replace('_', ' ') %}
+      {% if object_set == 'localized' and obj in object_map %}
+        {% set name = object_map[obj] %}
+      {% endif %}
+      {% set formatted_objects = formatted_objects + [name] %}
+    {% endfor %}
+    {% if obj_list | length > 0 and obj_list[0] in object_prompts_clip %}
+      {{ object_prompts_clip[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}', zone_list) }}
+    {% else %}
+      Analyse the video clip which should contain the following objects {{ formatted_objects | join(', ') if formatted_objects else 'objects' }}.
+      The areas of interest are the {{ zone_list }}.
+      Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
+      Consider what the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} is doing, why, and what it might do next.
+      Do not mention the prompt or describe the environment in your response.  
+      Your response will be used for a mobile phone notification message with the clip attached.
+    {% endif %}
 mode: parallel
 max: 4
