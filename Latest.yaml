@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.48)
+  name: Frigate LLM Notification with Telegram (v0.49)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -15,7 +15,7 @@ blueprint:
      
      Information:<br />
      - Supports multiple Frigate cameras, selected via the Frigate Cameras input. <br />
-     - Choose between standard or localized (Russian with emojis) object lists for notifications. <br />
+     - Choose between standard or localized (Russian) object lists for notifications. <br />
      - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br />
      - Telegram notifications require a Telegram bot and chat ID configured in Home Assistant. <br /><br />
      Description: <br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.48
+     Version: v 0.49
 
   domain: automation
   input:
@@ -58,14 +58,14 @@ blueprint:
                   domain: camera
         object_set:
           name: Object Set
-          description: Choose the object list to use for notifications (Standard or Localized with Russian names and emojis).
+          description: Choose the object list to use for notifications (Standard or Localized with Russian names).
           default: standard
           selector:
             select:
               options:
                 - label: Standard
                   value: standard
-                - label: Localized (Russian with Emojis)
+                - label: Localized (Russian)
                   value: localized
               mode: dropdown
         in_severity:
@@ -109,7 +109,7 @@ blueprint:
             boolean: {}
         in_objects:
           name: Required Objects
-          description: Frigate objects required in the selected zones if any. Localized names with emojis are shown in notifications if Localized object set is selected.
+          description: Frigate objects required in the selected zones if any. Localized Russian names are shown in notifications if Localized object set is selected.
           default: []
           selector:
             select:
@@ -705,11 +705,11 @@ actions:
                             milliseconds: 0
                         - variables:
                             title: "{{response.response_title if gen_title else title_image}}"
-                            msg: "{{response.response_text}}"
+                            msg: "{{response.response_text | default('Object detected')}}"
                       else:
                         - variables:
                             title: "{{title_image}}"
-                            msg: "{{custom_msg}}"
+                            msg: "{{custom_msg | default('Object detected')}}"
                     - alias: Send Initial notification to notify devices
                       repeat:
                         for_each: "{{notify_names}}"
@@ -736,7 +736,9 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             photo: "{{host}}{{image}}"
-                            caption: "{{title}}\n{{msg}}"
+                            caption: >-
+                              {% set caption_text = title + '\n' + msg %}
+                              {{ caption_text if caption_text is string else 'Object detected' }}
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                 - delay:
@@ -824,8 +826,8 @@ actions:
                         sequence:
                           - action: notify.{{ repeat.item }}
                             data:
-                              title: "{{response.title if gen_title2 else title_clip}}"
-                              message: "{{response.response_text}}"
+                              title: "{{response.title | default(title_clip)}}"
+                              message: "{{response.response_text | default('Clip analyzed')}}"
                               data:
                                 video: "{{gif}}"
                                 image: "{{gif}}"
@@ -846,7 +848,9 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             video: "{{host}}{{video}}"
-                            caption: "{{response.title if gen_title2 else title_clip}}\n{{response.response_text}}"
+                            caption: >-
+                              {% set caption_text = (response.title | default(title_clip)) + '\n' + (response.response_text | default('Clip analyzed')) %}
+                              {{ caption_text if caption_text is string else 'Clip analyzed' }}
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                     - delay:
@@ -890,16 +894,16 @@ variables:
   object_map: >-
     {% if object_set == 'localized' %}
       {
-        "person": "👤 ЧЕЛОВЕК",
-        "cat": "🐈 КОШКА",
-        "dog": "🐕 СОБАКА",
-        "bird": "🐦 ПТИЦА",
-        "car": "🚗 МАШИНА",
-        "face": "🧔‍♀️ ЛИЦО",
-        "bicycle": "🚲 ВЕЛОСИПЕД",
-        "motorcycle": "🏍 МОТОЦИКЛ",
-        "bus": "🚌 АВТОБУС",
-        "truck": "🚚 ГРУЗОВИК"
+        "person": "ЧЕЛОВЕК",
+        "cat": "КОШКА",
+        "dog": "СОБАКА",
+        "bird": "ПТИЦА",
+        "car": "МАШИНА",
+        "face": "ЛИЦО",
+        "bicycle": "ВЕЛОСИПЕД",
+        "motorcycle": "МОТОЦИКЛ",
+        "bus": "АВТОБУС",
+        "truck": "ГРУЗОВИК"
       }
     {% else %}
       {}
