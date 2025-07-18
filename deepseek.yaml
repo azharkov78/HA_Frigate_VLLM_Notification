@@ -442,8 +442,11 @@ blueprint:
           description: Select Telegram notification service to use
           default: []
           selector:
-            config_entry:
-              integration: telegram_bot
+            entity:
+              domain: notify
+              multiple: false
+              filter:
+                integration: telegram_bot
         click_action1:
           name: Click Action New Event 
           description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
