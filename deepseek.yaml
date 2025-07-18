@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.44)
+  name: Frigate LLM Notification with Telegram Deepseek(v0.1) 
   author: whag
   description: >
      Basic requirements:<br />
@@ -34,7 +34,7 @@ blueprint:
        - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
        - {{detections{1] = Event ID 2<br />
 
-     Version: v 0.44
+     Version: v 0.1
 
   domain: automation
   input:
@@ -445,8 +445,6 @@ blueprint:
             entity:
               domain: notify
               multiple: false
-              filter:
-                integration: telegram_bot
         click_action1:
           name: Click Action New Event 
           description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
