@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.51)
+  name: Frigate LLM Notification with Telegram (v0.52)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.51
+     Version: v 0.52
 
   domain: automation
   input:
@@ -215,15 +215,6 @@ blueprint:
                 - claude-sonnet-4-20250514
                 - claude-opus-4-20250514
                 - gemini-1.5-flash
-                - gpt-4o
-                - gpt-4o-mini
-                - gpt-4.1
-                - claude-3-7-sonnet-latest
-                - claude-3-5-sonnet-latest
-                - claude-3-5-haiku-latest
-                - claude-sonnet-4-20250514
-                - claude-opus-4-20250514
-                - gemini-1.5-flash
                 - gemini-1.5-pro
                 - gemini-2.0-flash
                 - gemini-2.0-flash-lite
@@ -252,8 +243,15 @@ blueprint:
           description: Initial notification message if not using LLM Vision for the snapshot analysis.
           default: >-
             {% set obj_list = objects | default([]) %}
-            {% set formatted_objects = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in obj_list] %}
             {% set zone_list = after_zones | default([]) | join(' and the ') | replace('_', ' ') | default('specified area') %}
+            {% set formatted_objects = [] %}
+            {% for obj in obj_list %}
+              {% set name = obj | replace('_', ' ') %}
+              {% if object_set == 'localized' and obj in object_map %}
+                {% set name = object_map[obj] %}
+              {% endif %}
+              {% set formatted_objects = formatted_objects + [name] %}
+            {% endfor %}
             {{ 'A ' + (formatted_objects | join(' and a ') if formatted_objects else 'object') + ' was detected in the ' + zone_list }}
           selector:
             text:
@@ -270,8 +268,15 @@ blueprint:
           description: Model prompt.
           default: >-
             {% set obj_list = input_objects | default([]) %}
-            {% set formatted_objects = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in obj_list] %}
             {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            {% set formatted_objects = [] %}
+            {% for obj in obj_list %}
+              {% set name = obj | replace('_', ' ') %}
+              {% if object_set == 'localized' and obj in object_map %}
+                {% set name = object_map[obj] %}
+              {% endif %}
+              {% set formatted_objects = formatted_objects + [name] %}
+            {% endfor %}
             Summarise the image in a 1 sentence response,
             concentrate on the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} if seen within
             the {{ zone_list }}. 
@@ -356,8 +361,15 @@ blueprint:
           description: Model prompt.
           default: >-
             {% set obj_list = input_objects | default([]) %}
-            {% set formatted_objects = [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in obj_list] %}
             {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+            {% set formatted_objects = [] %}
+            {% for obj in obj_list %}
+              {% set name = obj | replace('_', ' ') %}
+              {% if object_set == 'localized' and obj in object_map %}
+                {% set name = object_map[obj] %}
+              {% endif %}
+              {% set formatted_objects = formatted_objects + [name] %}
+            {% endfor %}
             Analyse the video clip which should contain the following objects {{ formatted_objects | join(', ') if formatted_objects else 'objects' }}.
             The areas of interest are the {{ zone_list }}.
             Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
@@ -722,12 +734,12 @@ actions:
                             seconds: 5
                             milliseconds: 0
                         - variables:
-                            title: "{{ (response.response_title if gen_title else title_image) | string | default('Camera Alert') }}"
-                            msg: "{{ response.response_text | string | default('Object detected') }}"
+                            title: "{{ response.response_title if gen_title and response.response_title else title_image | default('Camera Alert') }}"
+                            msg: "{{ response.response_text | default('Object detected') }}"
                       else:
                         - variables:
-                            title: "{{ title_image | string | default('Camera Alert') }}"
-                            msg: "{{ custom_msg | string | default('Object detected') }}"
+                            title: "{{ title_image | default('Camera Alert') }}"
+                            msg: "{{ custom_msg | default('Object detected') }}"
                     - action: logbook.log
                       metadata: {}
                       data:
@@ -759,7 +771,7 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             photo: "{{host}}{{image}}"
-                            caption: "{{ (title | string) + '\n' + (msg | string) | default('Camera Alert\nObject detected') }}"
+                            caption: "{{ title | default('Camera Alert') }}&#10;{{ msg | default('Object detected') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                 - delay:
@@ -842,8 +854,8 @@ actions:
                         seconds: 1
                         milliseconds: 0
                     - variables:
-                        clip_title: "{{ (response.title if gen_title2 else title_clip) | string | default('Camera Alert Update') }}"
-                        clip_msg: "{{ response.response_text | string | default('Clip analyzed') }}"
+                        clip_title: "{{ response.title if gen_title2 and response.title else title_clip | default('Camera Alert Update') }}"
+                        clip_msg: "{{ response.response_text | default('Clip analyzed') }}"
                     - action: logbook.log
                       metadata: {}
                       data:
@@ -877,7 +889,7 @@ actions:
                           data:
                             chat_id: !input telegram_chat_id
                             video: "{{host}}{{video}}"
-                            caption: "{{ (clip_title | string) + '\n' + (clip_msg | string) | default('Camera Alert Update\nClip analyzed') }}"
+                            caption: "{{ clip_title | default('Camera Alert Update') }}&#10;{{ clip_msg | default('Clip analyzed') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
                     - delay:
@@ -909,11 +921,11 @@ variables:
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
   event: "{{ trigger.payload_json }}"
-  type: "{{event['type']}}"
-  review_id: "{{event['after']['id']}}"
+  type: "{{event['type'] | default('unknown')}}"
+  review_id: "{{event['after']['id'] | default('unknown')}}"
   input_camera_name: >-
     {{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}
-  camera: "{{event['after']['camera']}}"
+  camera: "{{event['after']['camera'] | default('unknown')}}"
   camera_name: "{{ camera | replace('_', ' ') | title | default('Camera') }}"
   camera_match: "{{ camera in input_camera_name }}"
   detections: "{{ event['after']['data']['detections'] | default([]) }}"
@@ -936,7 +948,16 @@ variables:
       {}
     {% endif %}
   objects: >-
-    {{ [obj | replace('_', ' ') if object_set == 'standard' else (object_map[obj] if obj in object_map else obj | replace('_', ' ')) for obj in (event['after']['data']['objects'] | default([]))] | list }}
+    {% set obj_list = event['after']['data']['objects'] | default([]) %}
+    {% set formatted_objects = [] %}
+    {% for obj in obj_list %}
+      {% set name = obj | replace('_', ' ') %}
+      {% if object_set == 'localized' and obj in object_map %}
+        {% set name = object_map[obj] %}
+      {% endif %}
+      {% set formatted_objects = formatted_objects + [name] %}
+    {% endfor %}
+    {{ formatted_objects }}
   objects_match: >-
     {{ input_objects | length == 0 or (input_objects | select('in', (event['after']['data']['objects'] | default([]))) | list | length > 0) }}
   sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
@@ -947,13 +968,13 @@ variables:
     {% set zones = device_zones + (custom_zones | default([])) %}
     {% set ns = namespace(device_names=[]) %} 
     {% for device_id in zones %}
-    {% if device_attr(device_id, "name") != None %}
-    {% set device_name = device_attr(device_id, "name") %}
-    {% set sanitized_name = device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
-    {% set ns.device_names = ns.device_names + [sanitized_name] %}
-    {% else %}
-    {% set ns.device_names = ns.device_names + [device_id | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_")] %}
-    {% endif %} 
+      {% if device_attr(device_id, "name") != None %}
+        {% set device_name = device_attr(device_id, "name") %}
+        {% set sanitized_name = device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
+        {% set ns.device_names = ns.device_names + [sanitized_name] %}
+      {% else %}
+        {% set ns.device_names = ns.device_names + [device_id | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_")] %}
+      {% endif %} 
     {% endfor %} 
     {{ ns.device_names }}
   before_zones: "{{ event['before']['data']['zones'] | lower | default([]) }}"
