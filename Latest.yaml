@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.53)
+  name: Frigate LLM Notification with Telegram (v0.54)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.53
+     Version: v 0.54
 
   domain: automation
   input:
