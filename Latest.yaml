@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.56)
+  name: Frigate LLM Notification with Telegram (v0.57)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.56
+     Version: v 0.57
 
   domain: automation
   input:
@@ -1051,11 +1051,11 @@ variables:
   action1: !input in_action1
   action2: !input in_action2
   custom_object_prompts: >-
-    {% set user_input = !input custom_object_prompts | default('{}') %}
+    {% set user_input = input('custom_object_prompts') | default('{}') %}
     {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
     {{ parsed }}
   custom_object_prompts_clip: >-
-    {% set user_input = !input custom_object_prompts_clip | default('{}') %}
+    {% set user_input = input('custom_object_prompts_clip') | default('{}') %}
     {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
     {{ parsed }}
   selected_prompt: >-
@@ -1074,7 +1074,7 @@ variables:
     {% if obj_list | length > 0 and obj_list[0] in prompts %}
       {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      {{ !input prompt }}
+      {{ input('prompt') }}
     {% endif %}
   selected_prompt2: >-
     {% set obj_list = input_objects | default([]) %}
@@ -1092,7 +1092,7 @@ variables:
     {% if obj_list | length > 0 and obj_list[0] in prompts %}
       {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      {{ !input prompt2 }}
+      {{ input('prompt2') }}
     {% endif %}
 mode: parallel
 max: 4
