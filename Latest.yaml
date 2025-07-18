@@ -770,7 +770,7 @@ actions:
                         - action: telegram_bot.send_photo
                           data:
                             chat_id: !input telegram_chat_id
-                            photo: "{{host}}{{image}}"
+                            url: "{{host}}{{image}}"
                             caption: "{{ title | default('Camera Alert') }}&#10;{{ msg | default('Object detected') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
@@ -888,7 +888,7 @@ actions:
                         - action: telegram_bot.send_video
                           data:
                             chat_id: !input telegram_chat_id
-                            video: "{{host}}{{video}}"
+                            url: "{{host}}{{video}}"
                             caption: "{{ clip_title | default('Camera Alert Update') }}&#10;{{ clip_msg | default('Clip analyzed') }}"
                             parse_mode: !input telegram_parse_mode
                             disable_notification: !input telegram_silent
