@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.57)
+  name: Frigate LLM Notification with Telegram (v0.58)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.57
+     Version: v 0.58
 
   domain: automation
   input:
@@ -949,8 +949,11 @@ variables:
   prompt_input: !input prompt
   prompt2_input: !input prompt2
   event: >-
-    {% if trigger is defined and trigger.payload_json is defined and trigger.payload_json | from_json is mapping %}
-      {{ trigger.payload_json | from_json }}
+    {% set json_string = trigger.payload_json | default('{}') %}
+    {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
+    {% set parsed = from_json(cleaned_json) | default({}, true) %}
+    {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
+      {{ parsed }}
     {% else %}
       {}
     {% endif %}
@@ -1056,11 +1059,11 @@ variables:
   action2: !input in_action2
   custom_object_prompts: >-
     {% set user_input = custom_object_prompts_input | default('{}') %}
-    {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
+    {% set parsed = from_json(user_input) | default({}, true) %}
     {{ parsed }}
   custom_object_prompts_clip: >-
     {% set user_input = custom_object_prompts_clip_input | default('{}') %}
-    {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
+    {% set parsed = from_json(user_input) | default({}, true) %}
     {{ parsed }}
   selected_prompt: >-
     {% set obj_list = input_objects | default([]) %}
