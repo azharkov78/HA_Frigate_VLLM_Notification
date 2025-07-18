@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.55)
+  name: Frigate LLM Notification with Telegram (v0.56)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -37,7 +37,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.55
+     Version: v 0.56
 
   domain: automation
   input:
@@ -777,7 +777,7 @@ actions:
                               message: "{{msg}}"
                               data:
                                 image: "{{thumb}}"
-                                entity_id: "{{input_camera}}"
+                                entity_id: "{{input_camera}}}"
                                 url: !input click_action1
                                 clickAction: !input click_action1
                                 group: "{{camera}}-frigate-notification"
@@ -944,16 +944,21 @@ variables:
   use_llm_image: !input in_use_llm_image
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
-  event: "{{ trigger.payload_json }}"
-  type: "{{event['type'] | default('unknown')}}"
-  review_id: "{{event['after']['id'] | default('unknown')}}"
+  event: >-
+    {% if trigger is defined and trigger.payload_json is defined and trigger.payload_json | from_json is mapping %}
+      {{ trigger.payload_json | from_json }}
+    {% else %}
+      {}
+    {% endif %}
+  type: "{{ event['type'] | default('unknown') }}"
+  review_id: "{{ event['after']['id'] | default('unknown') if event is mapping and 'after' in event else 'unknown' }}"
   input_camera_name: >-
     {{ input_camera | expand | map(attribute='attributes.camera_name', default='none') | list }}
-  camera: "{{event['after']['camera'] | default('unknown')}}"
+  camera: "{{ event['after']['camera'] | default('unknown') if event is mapping and 'after' in event else 'unknown' }}"
   camera_name: "{{ camera | replace('underscore', ' ') | title | default('Camera') }}"
   camera_match: "{{ camera in input_camera_name }}"
-  detections: "{{ event['after']['data']['detections'] | default([]) }}"
-  id: "{{ detections[0] | default('unknown') }}"
+  detections: "{{ event['after']['data']['detections'] | default([]) if event is mapping and 'after' in event and 'data' in event['after'] else [] }}"
+  id: "{{ detections[0] | default('unknown') if detections | length > 0 else 'unknown' }}"
   object_map: >-
     {% if object_set == 'localized' %}
       {
@@ -971,7 +976,7 @@ variables:
       {}
     {% endif %}
   objects: >-
-    {% set obj_list = event['after']['data']['objects'] | default([]) %}
+    {% set obj_list = event['after']['data']['objects'] | default([]) if event is mapping and 'after' in event and 'data' in event['after'] else [] %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('underscore', ' ') %}
@@ -982,8 +987,8 @@ variables:
     {% endfor %}
     {{ formatted_objects }}
   objects_match: >-
-    {{ input_objects | length == 0 or (input_objects | select('in', (event['after']['data']['objects'] | default([]))) | list | length > 0) }}
-  sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) }}"
+    {{ input_objects | length == 0 or (input_objects | select('in', (event['after']['data']['objects'] | default([]) if event is mapping and 'after' in event and 'data' in event['after'] else [])) | list | length > 0) }}
+  sub_labels: "{{ event['after']['data']['sub_labels'] | default([]) if event is mapping and 'after' in event and 'data' in event['after'] else [] }}"
   sub_labels_match: >-    
     {{ input_sub_labels | length == 0 or (input_sub_labels | select('in', sub_labels) | list | length > 0) }}
   zone_names: >-
@@ -1000,15 +1005,15 @@ variables:
       {% endif %} 
     {% endfor %} 
     {{ ns.device_names }}
-  before_zones: "{{ event['before']['data']['zones'] | lower | default([]) }}"
-  after_zones: "{{ event['after']['data']['zones'] | lower | default([]) }}"
+  before_zones: "{{ event['before']['data']['zones'] | lower | default([]) if event is mapping and 'before' in event and 'data' in event['before'] else [] }}"
+  after_zones: "{{ event['after']['data']['zones'] | lower | default([]) if event is mapping and 'after' in event and 'data' in event['after'] else [] }}"
   zone_entered: >-
     {{ zone_names | length == 0 or ((zone_names | select('in', (before_zones + after_zones)) | list | length) > 0) }}
   all_zones_entered: >-
     {{ true if (zone_names | reject('in', (before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{ zone_entered and all_zones_entered }}"
   input_severity: !input in_severity
-  severity: "{{ (event['before']['severity'] | default('') + event['after']['severity'] | default('')) | default('') }}"
+  severity: "{{ (event['before']['severity'] | default('') if event is mapping and 'before' in event else '') + (event['after']['severity'] | default('') if event is mapping and 'after' in event else '') }}"
   severity_match: "{{ input_severity | select('in', severity) | list | length > 0 }}"
   notify_names: >-
     {% set ns = namespace(device_names=[]) %} 
@@ -1046,11 +1051,11 @@ variables:
   action1: !input in_action1
   action2: !input in_action2
   custom_object_prompts: >-
-    {% set user_input = input('custom_object_prompts') | default('{}') %}
+    {% set user_input = !input custom_object_prompts | default('{}') %}
     {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
     {{ parsed }}
   custom_object_prompts_clip: >-
-    {% set user_input = input('custom_object_prompts_clip') | default('{}') %}
+    {% set user_input = !input custom_object_prompts_clip | default('{}') %}
     {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
     {{ parsed }}
   selected_prompt: >-
@@ -1069,7 +1074,7 @@ variables:
     {% if obj_list | length > 0 and obj_list[0] in prompts %}
       {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      {{ input('prompt') }}
+      {{ !input prompt }}
     {% endif %}
   selected_prompt2: >-
     {% set obj_list = input_objects | default([]) %}
@@ -1087,7 +1092,7 @@ variables:
     {% if obj_list | length > 0 and obj_list[0] in prompts %}
       {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      {{ input('prompt2') }}
+      {{ !input prompt2 }}
     {% endif %}
 mode: parallel
 max: 4
