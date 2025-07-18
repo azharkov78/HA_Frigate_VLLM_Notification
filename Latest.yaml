@@ -777,7 +777,7 @@ actions:
                               message: "{{msg}}"
                               data:
                                 image: "{{thumb}}"
-                                entity_id: "{{input_camera}}}"
+                                entity_id: "{{input_camera}}"
                                 url: !input click_action1
                                 clickAction: !input click_action1
                                 group: "{{camera}}-frigate-notification"
@@ -944,6 +944,10 @@ variables:
   use_llm_image: !input in_use_llm_image
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
+  custom_object_prompts_input: !input custom_object_prompts
+  custom_object_prompts_clip_input: !input custom_object_prompts_clip
+  prompt_input: !input prompt
+  prompt2_input: !input prompt2
   event: >-
     {% if trigger is defined and trigger.payload_json is defined and trigger.payload_json | from_json is mapping %}
       {{ trigger.payload_json | from_json }}
@@ -1051,11 +1055,11 @@ variables:
   action1: !input in_action1
   action2: !input in_action2
   custom_object_prompts: >-
-    {% set user_input = input('custom_object_prompts') | default('{}') %}
+    {% set user_input = custom_object_prompts_input | default('{}') %}
     {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
     {{ parsed }}
   custom_object_prompts_clip: >-
-    {% set user_input = input('custom_object_prompts_clip') | default('{}') %}
+    {% set user_input = custom_object_prompts_clip_input | default('{}') %}
     {% set parsed = from_json(user_input) if user_input and user_input != '{}' else {} %}
     {{ parsed }}
   selected_prompt: >-
@@ -1074,7 +1078,7 @@ variables:
     {% if obj_list | length > 0 and obj_list[0] in prompts %}
       {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      {{ input('prompt') }}
+      {{ prompt_input }}
     {% endif %}
   selected_prompt2: >-
     {% set obj_list = input_objects | default([]) %}
@@ -1092,7 +1096,7 @@ variables:
     {% if obj_list | length > 0 and obj_list[0] in prompts %}
       {{ prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join('' and '') | replace(''underscore'', '' '') | default(''specified area'') }}', zone_list) }}
     {% else %}
-      {{ input('prompt2') }}
+      {{ prompt2_input }}
     {% endif %}
 mode: parallel
 max: 4
