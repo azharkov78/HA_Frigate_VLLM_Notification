@@ -951,9 +951,13 @@ variables:
   event: >-
     {% set json_string = trigger.payload_json | default('{}') %}
     {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% set parsed = from_json(cleaned_json) | default({}, true) %}
-    {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
-      {{ parsed }}
+    {% if trigger is defined and trigger.payload_json is defined %}
+      {% if is_state_attr('input_text.temp_json', 'text') %}
+        {{ state_attr('input_text.temp_json', 'text') | from_json }}
+      {% else %}
+        {% set temp = {'text': cleaned_json} %}
+        {{ temp.text | from_json | default({}, true) }}
+      {% endif %}
     {% else %}
       {}
     {% endif %}
