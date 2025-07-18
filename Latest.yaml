@@ -221,13 +221,15 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(\'\')|replace(\'_\', \' \')}} Alert"
+          default: |-
+            {{camera_name}} - {{sub_labels| join(\'\')|replace(\'_\', \' \')}} Alert
           selector:
             text:
         in_custom_msg:
           name: No AI Notification Message
           description: Inital notificaion message if not using LLM Vision for the snapshot analysis.
-          default: "A {{objects| join(\' and a \')|replace(\'_\', \' \')}} was detected in the {{after_zones| join(\' and the \')|replace(\'_\', \' \' )}}" 
+          default: |-
+            A {{objects| join(\' and a \')|replace(\'_\', \' \')}} was detected in the {{after_zones| join(\' and the \')|replace(\'_\', \' \' )}}
           selector:
             text:
               multiline: true
@@ -241,7 +243,8 @@ blueprint:
         prompt:
           name: Default Prompt 
           description: Model prompt for objects not specified below.
-          default: "Summarise the image in a 1 sentence response, concentrate on the {{input_objects| join(\'\')|replace(\'_\', \' \')}} if seen within the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}}. Any person approaching the camera should take priority over all other events. If you see a known person from memory, mention this in the response. Do not mention the prompt or describe the environment in your response. The response is an intial alert for a mobile phone security notification."
+          default: |-
+            Summarise the image in a 1 sentence response, concentrate on the {{input_objects| join(\'\')|replace(\'_\', \' \')}} if seen within the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}}. Any person approaching the camera should take priority over all other events. If you see a known person from memory, mention this in the response. Do not mention the prompt or describe the environment in your response. The response is an intial alert for a mobile phone security notification.
           selector:
             text:
               multiline: true
@@ -353,7 +356,8 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(\'\')|replace(\'_\', \' \')}} Alert Update"
+          default: |-
+            {{camera_name}} - {{sub_labels| join(\'\')|replace(\'_\', \' \')}} Alert Update
           selector:
             text:
               multiline: false
@@ -361,7 +365,8 @@ blueprint:
         prompt2:
           name: Default Prompt 
           description: Model prompt for objects not specified below.
-          default: "Analyse the video clip which should contain the following objects {{input_objects| join(\'\')|replace(\'_\', \' \')}} The areas of interest are the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}} Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing. Consider what the {{input_objects|join(\'\')|replace(\'_\',\' \')}} is doing, why, and what it might do next. Do not mention the prompt or describe the environment in your response. Your response will be used for a mobile phone notification message with the clip attached."
+          default: |-
+            Analyse the video clip which should contain the following objects {{input_objects| join(\'\')|replace(\'_\', \' \')}} The areas of interest are the {{zone_names| join(\' and ,\')|replace(\'_\',\' \')}} Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing. Consider what the {{input_objects|join(\'\')|replace(\'_\',\' \')}} is doing, why, and what it might do next. Do not mention the prompt or describe the environment in your response. Your response will be used for a mobile phone notification message with the clip attached.
           selector:
             text:
               multiline: true
@@ -1032,3 +1037,4 @@ variables:
   action2: !input in_action2
 mode: parallel
 max: 4
+
