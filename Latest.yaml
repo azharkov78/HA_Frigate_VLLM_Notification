@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification with Telegram (v0.58)
+  name: Frigate LLM Notification with Telegram (v0.59)
   author: whag (modified by Grok)
   description: >
      Basic requirements:<br />
@@ -11,7 +11,8 @@ blueprint:
      - Downloader integration. <br />
      Link: https://www.home-assistant.io/integrations/downloader/ <br />
      - Telegram Bot integration setup in Home Assistant. <br />
-     Link: https://www.home-assistant.io/integrations/telegram_bot/ <br /><br />
+     Link: https://www.home-assistant.io/integrations/telegram_bot/ <br />
+     - Home Assistant 2023.7 or later for JSON parsing support. <br /><br />
      
      Information:<br />
      - Supports multiple Frigate cameras, selected via the Frigate Cameras input. <br />
@@ -37,7 +38,7 @@ blueprint:
        - {{detections[0]}} = Event ID 1 (i.e., triggering event)<br />
        - {{detections[1]}} = Event ID 2<br />
 
-     Version: v 0.58
+     Version: v 0.59
 
   domain: automation
   input:
@@ -951,13 +952,15 @@ variables:
   event: >-
     {% set json_string = trigger.payload_json | default('{}') %}
     {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% if trigger is defined and trigger.payload_json is defined %}
-      {% if is_state_attr('input_text.temp_json', 'text') %}
-        {{ state_attr('input_text.temp_json', 'text') | from_json }}
-      {% else %}
-        {% set temp = {'text': cleaned_json} %}
-        {{ temp.text | from_json | default({}, true) }}
-      {% endif %}
+    {% set parsed = {} %}
+    {% if 'from_json' is defined %}
+      {% set parsed = from_json(cleaned_json) | default({}, true) %}
+    {% else %}
+      {{ log('Warning: from_json filter is undefined. Please upgrade Home Assistant to 2023.7 or later.', level='warning') }}
+      {% set parsed = {} %}
+    {% endif %}
+    {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
+      {{ parsed }}
     {% else %}
       {}
     {% endif %}
@@ -1063,11 +1066,21 @@ variables:
   action2: !input in_action2
   custom_object_prompts: >-
     {% set user_input = custom_object_prompts_input | default('{}') %}
-    {% set parsed = from_json(user_input) | default({}, true) %}
+    {% if 'from_json' is defined %}
+      {% set parsed = from_json(user_input) | default({}, true) %}
+    {% else %}
+      {{ log('Warning: from_json filter is undefined for custom_object_prompts. Please upgrade Home Assistant to 2023.7 or later.', level='warning') }}
+      {% set parsed = {} %}
+    {% endif %}
     {{ parsed }}
   custom_object_prompts_clip: >-
     {% set user_input = custom_object_prompts_clip_input | default('{}') %}
-    {% set parsed = from_json(user_input) | default({}, true) %}
+    {% if 'from_json' is defined %}
+      {% set parsed = from_json(user_input) | default({}, true) %}
+    {% else %}
+      {{ log('Warning: from_json filter is undefined for custom_object_prompts_clip. Please upgrade Home Assistant to 2023.7 or later.', level='warning') }}
+      {% set parsed = {} %}
+    {% endif %}
     {{ parsed }}
   selected_prompt: >-
     {% set obj_list = input_objects | default([]) %}
