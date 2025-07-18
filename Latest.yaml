@@ -1025,21 +1025,23 @@ variables:
   action2: !input in_action2
   object_prompts: >-
     {
-      "person": "Summarize the image in a 1 sentence response, focusing on any person approaching the camera in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. If a known person is recognized from memory, include their identity in the response. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
-      "car": "Summarize the image in a 1 sentence response, focusing on any car entering or moving in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the car's color or type if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
-      "dog": "Summarize the image in a 1 sentence response, focusing on any dog in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Mention the dog's behavior (e.g., running, sitting) if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
-      "cat": "Summarize the image in a 1 sentence response, focusing on any cat in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Mention the cat's behavior or appearance if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification."
+      "person": "Sumobject_prompts: >-
+    {
+      "person": "Summarize the image in a 1 sentence response, focusing on any person approaching the camera in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. If a known person is recognized from memory, include their identity in the response. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
+      "car": "Summarize the image in a 1 sentence response, focusing on any car entering or moving in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the car's color or type if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
+      "dog": "Summarize the image in a 1 sentence response, focusing on any dog in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Mention the dog's behavior (e.g., running, sitting) if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.",
+      "cat": "Summarize the image in a 1 sentence response, focusing on any cat in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Mention the cat's behavior or appearance if visible. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification."
     }
   object_prompts_clip: >-
     {
-      "person": "Analyze the video clip, focusing on any person in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe what the person is doing, why, and what they might do next. If a known person is recognized from memory, include their identity. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
-      "car": "Analyze the video clip, focusing on any car in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the car's movement, color, or type, and predict its next action. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
-      "dog": "Analyze the video clip, focusing on any dog in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the dog's actions (e.g., running, barking) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
-      "cat": "Analyze the video clip, focusing on any cat in the {{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}. Describe the cat's actions (e.g., walking, hiding) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached."
+      "person": "Analyze the video clip, focusing on any person in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe what the person is doing, why, and what they might do next. If a known person is recognized from memory, include their identity. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
+      "car": "Analyze the video clip, focusing on any car in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the car's movement, color, or type, and predict its next action. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
+      "dog": "Analyze the video clip, focusing on any dog in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the dog's actions (e.g., running, barking) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached.",
+      "cat": "Analyze the video clip, focusing on any cat in the {{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}. Describe the cat's actions (e.g., walking, hiding) and predict its next behavior. Do not mention the prompt or describe the environment. The response is for a mobile phone notification with the clip attached."
     }
   selected_prompt: >-
     {% set obj_list = input_objects | default([]) %}
-    {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+    {% set zone_list = zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('_', ' ') %}
@@ -1048,20 +1050,15 @@ variables:
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
     {% endfor %}
+    {% set objects_str = formatted_objects | join(', ') if formatted_objects else 'objects' %}
     {% if obj_list | length > 0 and obj_list[0] in object_prompts %}
-      {{ object_prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}', zone_list) }}
+      {{ object_prompts[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}', zone_list) }}
     {% else %}
-      Summarise the image in a 1 sentence response,
-      concentrate on the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} if seen within
-      the {{ zone_list }}. 
-      Any person approaching the camera should take priority over all other events.
-      If you see a known person from memory, mention this in the response.
-      Do not mention the prompt or describe the environment in your response.
-      The response is an initial alert for a mobile phone security notification.
+      Summarise the image in a 1 sentence response, concentrating on the {{ objects_str }} if seen within the {{ zone_list }}. Any person approaching the camera should take priority over all other events. If you see a known person from memory, mention this in the response. Do not mention the prompt or describe the environment in your response. The response is an initial alert for a mobile phone security notification.
     {% endif %}
   selected_prompt2: >-
     {% set obj_list = input_objects | default([]) %}
-    {% set zone_list = zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') %}
+    {% set zone_list = zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') %}
     {% set formatted_objects = [] %}
     {% for obj in obj_list %}
       {% set name = obj | replace('_', ' ') %}
@@ -1070,15 +1067,11 @@ variables:
       {% endif %}
       {% set formatted_objects = formatted_objects + [name] %}
     {% endfor %}
+    {% set objects_str = formatted_objects | join(', ') if formatted_objects else 'objects' %}
     {% if obj_list | length > 0 and obj_list[0] in object_prompts_clip %}
-      {{ object_prompts_clip[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ,') | replace('_', ' ') | default('specified area') }}', zone_list) }}
+      {{ object_prompts_clip[obj_list[0]] | replace('{{ zone_names | default([]) | join(' and ') | replace('_', ' ') | default('specified area') }}', zone_list) }}
     {% else %}
-      Analyse the video clip which should contain the following objects {{ formatted_objects | join(', ') if formatted_objects else 'objects' }}.
-      The areas of interest are the {{ zone_list }}.
-      Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-      Consider what the {{ formatted_objects | join(', ') if formatted_objects else 'objects' }} is doing, why, and what it might do next.
-      Do not mention the prompt or describe the environment in your response.  
-      Your response will be used for a mobile phone notification message with the clip attached.
+      Analyse the video clip which should contain the following objects {{ objects_str }}. The areas of interest are the {{ zone_list }}. Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing. Consider what the {{ objects_str }} is doing, why, and what it might do next. Do not mention the prompt or describe the environment in your response. The response will be used for a mobile phone notification message with the clip attached.
     {% endif %}
 mode: parallel
 max: 4
