@@ -992,11 +992,16 @@ variables:
   event: >-
     {% set json_string = trigger.payload_json | default('{}') %}
     {% set cleaned_json = json_string | regex_replace('"([^"]*)\\s+"', '"$1"') %}
-    {% set parsed = from_json(cleaned_json) | default({}, true) %}
-    {% if parsed is mapping %}
+    {% set parsed = {} %}
+    {% if 'json_parse' is defined %}
+      {% set parsed = json_parse(cleaned_json) | default({}) %}
+    {% else %}
+      {{ log('Warning: JSON parsing not available. Some features may not work properly.', level='warning') }}
+      {% set parsed = {} %}
+    {% endif %}
+    {% if trigger is defined and trigger.payload_json is defined and parsed is mapping %}
       {{ parsed }}
     {% else %}
-      {{ log('Warning: Failed to parse trigger.payload_json. Check MQTT payload for errors.', level='warning') }}
       {}
     {% endif %}
   type: "{{ event['type'] | default('unknown') if event is mapping else 'unknown' }}"
@@ -1101,22 +1106,22 @@ variables:
   action2: !input in_action2
   custom_object_prompts: >-
     {% set user_input = custom_object_prompts_input | default('{}') %}
-    {% set parsed = from_json(user_input) | default({}, true) %}
-    {% if parsed is mapping %}
-      {{ parsed }}
+    {% set parsed = {} %}
+    {% if 'json_parse' is defined %}
+      {% set parsed = json_parse(user_input) | default({}) %}
     {% else %}
-      {{ log('Warning: Failed to parse custom_object_prompts. Check JSON format in input.', level='warning') }}
       {}
     {% endif %}
+    {{ parsed }}
   custom_object_prompts_clip: >-
     {% set user_input = custom_object_prompts_clip_input | default('{}') %}
-    {% set parsed = from_json(user_input) | default({}, true) %}
-    {% if parsed is mapping %}
-      {{ parsed }}
+    {% set parsed = {} %}
+    {% if 'json_parse' is defined %}
+      {% set parsed = json_parse(user_input) | default({}) %}
     {% else %}
-      {{ log('Warning: Failed to parse custom_object_prompts_clip. Check JSON format in input.', level='warning') }}
       {}
     {% endif %}
+    {{ parsed }}
   selected_prompt: >-
     {% set obj_list = input_objects | default([]) %}
     {% set zone_list = zone_names | default([]) | join(' and ') | replace('underscore', ' ') | default('specified area') %}
