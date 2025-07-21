@@ -1006,11 +1006,11 @@ variables:
   prompt_video_dog: !input prompt_video_dog
   prompt_video_bird: !input prompt_video_bird
   prompt_video_default: !input prompt_video_default
-  prompt_car: !input prompt_video_car
-  prompt_person: !input prompt_video_person
-  prompt_cat: !input prompt_video_cat
-  prompt_dog: !input prompt_video_dog
-  prompt_bird: !input prompt_video_bird
+  prompt_car: !input prompt_car
+  prompt_person: !input prompt_person
+  prompt_cat: !input prompt_cat
+  prompt_dog: !input prompt_dog
+  prompt_bird: !input prompt_bird
   prompt: !input prompt
 mode: parallel
 max: 4
