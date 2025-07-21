@@ -611,6 +611,8 @@ actions:
         Notify devices: {{notify_names}} /n
         Downloader root: {{root_dir}} /n
         Downloader sub: {{sub_dir}} /n
+        Telegram Chat ID: {{ chat_id }} /n
+        Raw: {{ in_telegram_chat_id }} /n
         Thumb url {{thumb}} /n
         Snapshot url {{image}}  /n 
         Clip url {{video}} /n
