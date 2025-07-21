@@ -198,13 +198,13 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{translated_objects| join(',')|replace('_', ' ')}} обнаружен"
+          default: ""{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}}  обнаружен"
           selector:
             text:
         in_custom_msg:
           name: No AI Notification Message
           description: Inital notificaion message if not using LLM Vision for the snapshot analysis.
-          default: "На {{camera_name}} обнаружен {{translated_objects| join(' и ')}}."
+          default: "На {{camera_name}} обнаружен {{objects| join(' and a ')|replace('_', ' ')}}."
           selector:
             text:
               multiline: true
@@ -219,8 +219,8 @@ blueprint:
           name: Prompt 
           description: Model prompt.
           default: >-
-            Опишите изображение. На нём {{ translated_objects | join(' и ') }}.
-            Сосредоточьтесь на {{ translated_objects | join(',') }} и их действиях.
+            Опишите изображение. На нём {{input_objects| join(',')|replace('_', ' ')}}.
+            Сосредоточьтесь на объекте и его действиях.
             Не упоминайте подсказку и не описывайте обстановку.
             Ответ должен быть кратким и понятным.
           selector:
@@ -339,7 +339,7 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{translated_objects| join(',')|replace('_', ' ')}} обнаружен"
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}}  обнаружен"
           selector:
             text:
               multiline: false
@@ -394,8 +394,8 @@ blueprint:
           name: Default Video Prompt
           description: Model prompt.
           default: >-
-            Опишите изображение. На нём {{ translated_objects | join(' и ') }}.
-            Сосредоточьтесь на {{ translated_objects | join(',') }} и их действиях.
+            Опишите изображение. На нём {{input_objects| join(',')|replace('_', ' ')}}.
+            Сосредоточьтесь на его действиях.
             Не упоминайте подсказку и не описывайте обстановку.
             Ответ должен быть кратким и понятным.
           selector:
@@ -730,18 +730,10 @@ actions:
                           use_memory: !input use_memory
                           image_file: "{{image_local}}"
                           message: >-
-                            {% set mapping = {
-                              'person': 'человек',
-                              'car': 'машина',
-                              'cat': 'кот',
-                              'dog': 'собака',
-                              'bird': 'птица'
-                            } %}
-                            {% set translated_objects = objects | map('replace', mapping) | list %}
                             {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                              {{ 'prompt_' + objects[0] | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
+                              {{ 'prompt_' + objects[0] }}
                             {% else %}
-                              {{ prompt | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
+                              {{ prompt }}
                             {% endif %}
                           include_filename: false
                           target_width: !input target_width
@@ -861,18 +853,10 @@ actions:
                       max_tokens: !input tokens2
                       generate_title: "{{gen_title2}}"
                       message: >-
-                        {% set mapping = {
-                          'person': 'человек',
-                          'car': 'машина',
-                          'cat': 'кот',
-                          'dog': 'собака',
-                          'bird': 'птица'
-                        } %}
-                        {% set translated_objects = objects | map('replace', mapping) | list %}
                         {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                          {{ 'prompt_' + objects[0] | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
+                          {{ 'prompt_video_' + objects[0] }}
                         {% else %}
-                          {{ prompt | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
+                          {{  prompt_video_default }}
                         {% endif %}
                     response_variable: response
                   - delay:
