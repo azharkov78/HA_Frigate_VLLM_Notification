@@ -730,8 +730,16 @@ actions:
                           use_memory: !input use_memory
                           image_file: "{{image_local}}"
                           message: >-
-                            {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                              {{ self['prompt_' + objects[0]] }}
+                            {% if objects[0] == 'car' %}
+                              {{ prompt_car }}
+                            {% elif objects[0] == 'person' %}
+                              {{ prompt_person }}
+                            {% elif objects[0] == 'cat' %}
+                              {{ prompt_cat }}
+                            {% elif objects[0] == 'dog' %}
+                              {{ prompt_dog }}
+                            {% elif objects[0] == 'bird' %}
+                              {{ prompt_bird }}
                             {% else %}
                               {{ prompt }}
                             {% endif %}
@@ -853,8 +861,16 @@ actions:
                       max_tokens: !input tokens2
                       generate_title: "{{gen_title2}}"
                       message: >-
-                        {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                          {{ self['prompt_video_' + objects[0]] }}
+                        {% if objects[0] == 'car' %}
+                          {{ prompt_video_car }}
+                        {% elif objects[0] == 'person' %}
+                          {{ prompt_video_person }}
+                        {% elif objects[0] == 'cat' %}
+                          {{ prompt_video_cat }}
+                        {% elif objects[0] == 'dog' %}
+                          {{ prompt_video_dog }}
+                        {% elif objects[0] == 'bird' %}
+                          {{ prompt_video_bird }}
                         {% else %}
                           {{ prompt_video_default }}
                         {% endif %}
