@@ -485,7 +485,7 @@ blueprint:
         in_telegram_chat_id:
           name: Telegram Chat ID
           description: ID чата или имя пользователя Telegram, куда будут отправляться уведомления.
-          default: ""
+          default: "125219695"
           selector:
             text:
               multiline: false
