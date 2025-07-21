@@ -719,10 +719,6 @@ actions:
                               ttl: 0
                               priority: high
                   - alias: Send notification to Telegram
-                    if:
-                      - condition: template
-                        value_template: "{{ in_telegram_chat_id | trim != '' }}"
-                    then:
                       - action: telegram_bot.send_message
                         data:
                           message: "{{msg}}"
@@ -832,10 +828,6 @@ actions:
                               ttl: 0
                               priority: high
                   - alias: Update notification in Telegram
-                    if:
-                      - condition: template
-                        value_template: "{{ in_telegram_chat_id | trim != '' }}"
-                    then:
                       - action: telegram_bot.send_message
                         data:
                           message: "{{response.response_text}}"
