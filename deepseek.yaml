@@ -730,10 +730,18 @@ actions:
                           use_memory: !input use_memory
                           image_file: "{{image_local}}"
                           message: >-
+                            {% set mapping = {
+                              'person': 'человек',
+                              'car': 'машина',
+                              'cat': 'кот',
+                              'dog': 'собака',
+                              'bird': 'птица'
+                            } %}
+                            {% set translated_objects = objects | map('replace', mapping) | list %}
                             {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                              {{ 'prompt_' + objects[0] }}
+                              {{ 'prompt_' + objects[0] | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
                             {% else %}
-                              {{ prompt }}
+                              {{ prompt | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
                             {% endif %}
                           include_filename: false
                           target_width: !input target_width
@@ -853,10 +861,18 @@ actions:
                       max_tokens: !input tokens2
                       generate_title: "{{gen_title2}}"
                       message: >-
+                        {% set mapping = {
+                          'person': 'человек',
+                          'car': 'машина',
+                          'cat': 'кот',
+                          'dog': 'собака',
+                          'bird': 'птица'
+                        } %}
+                        {% set translated_objects = objects | map('replace', mapping) | list %}
                         {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                          {{ 'prompt_video_' + objects[0] }}
+                          {{ 'prompt_' + objects[0] | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
                         {% else %}
-                          {{ prompt_video_default }}
+                          {{ prompt | replace({'car': 'машина', 'person': 'человек', 'cat': 'кот', 'dog': 'собака', 'bird': 'птица'}) }}
                         {% endif %}
                     response_variable: response
                   - delay:
@@ -1000,15 +1016,5 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
-  translated_objects: >-
-  {% set mapping = {
-    'person': 'человек',
-    'car': 'машина',
-    'cat': 'кот',
-    'dog': 'собака',
-    'face': 'лицо',
-    'bird': 'птица'
-  } %}
-  {{ objects | map('replace', mapping) | list }}
 mode: parallel
 max: 4
