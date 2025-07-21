@@ -1,6 +1,6 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.42) - Telegram Enhanced
-  author: whag & Manus AI
+  name: Frigate LLM Notification Latest (v0.43)
+  author: whag
   description: >
      Basic requirements:<br />
      - Home Assistant with an MQTT broker setup. <br />
@@ -9,15 +9,18 @@ blueprint:
      - LLM Vision integration with provider setup. <br />
      Link: https://github.com/valentinfrlch/ha-llmvision <br />
      - Downloader integration. <br />
-     Link: https://www.home-assistant.io/integrations/downloader/<br /><br />
+     Link: https://www.home-assistant.io/integrations/downloader/<br />
+     - Telegram Bot integration for notifications (optional). <br />
+     Link: https://www.home-assistant.io/integrations/telegram_bot/<br /><br />
      
      Information:<br />
      - Only suitable for one Frigate camera, use multiple instances of this automation for multiple cameras if required. <br />
-     - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br /><br />
+     - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br />
+     - Telegram notifications require a configured Telegram Bot and chat ID. <br /><br />
      Description: <br />
-     Use LLM Vision to analyse frigate snapshots and clips and send notifications via the Home Assistant companion app and Telegram. <br />
+     Use LLM Vision to analyse frigate snapshots and clips and send notifications via the Home Assistant companion app and/or Telegram. <br />
      Monitors MQTT frigate/reviews topic of types [new],[update] and [end]. <br />
-     The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability for usingh LLM Vision with Frigate.
+     The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability for using LLM Vision with Frigate.
      Note that the downloader folder will need maintained separately (i.e. old files deleted or backed up). This can be achieved automatically via a shell command or similar <br />
      This automation runs in parallel mode. <br /><br />
      Tested on Android only. <br /><br />
@@ -33,7 +36,7 @@ blueprint:
        - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
        - {{detections{1] = Event ID 2<br />
 
-     Version: v 0.42
+     Version: v 0.43
 
   domain: automation
   input:
@@ -208,10 +211,9 @@ blueprint:
               - llama-3.2-90b-vision-preview
               - llama-3.2-11b-vision-preview
               - Llama-4-Scout-17B-16E-Instruct-FP8
-              - Llama-4-Maverick-17B-128E-Instruct-FP8
+              - Llama-4-Maverick-17B-16E-Instruct-FP8
               multiple: false
               custom_value: true
-              
     image_analyse:
       name: Snapshot Analyse
       icon: mdi:cog
@@ -226,74 +228,68 @@ blueprint:
             text:
         in_custom_msg:
           name: No AI Notification Message
-          description: Inital notificaion message if not using LLM Vision for the snapshot analysis.
-          default: "A {{objects| join(' and a ')|replace('_', ' ')}} was detected in the {{after_zones| join(' and the ')|replace('_', ' ' )}}" 
+          description: Initial notification message if not using LLM Vision for the snapshot analysis.
+          default: "A {{objects| join(' and a ')|replace('_', ' ')}} was detected in the {{after_zones| join(' and the ')|replace('_', ' ' )}}"
           selector:
             text:
               multiline: true
               multiple: false
         in_use_llm_image:
           name: LLM Vision Snapshot
-          description: Use LLM Vision for intial snapshot analysis. If off then the custom message above will be used to generate the notification.
+          description: Use LLM Vision for initial snapshot analysis. If off then the custom message above will be used to generate the notification.
           default: true
           selector:
             boolean: {}
-        prompt:
-          name: Default Prompt 
-          description: Model prompt for objects not specified below.
-          default: Summarise the image in a 1 sentence response,
-                   concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
-                   the {{zone_names| join(' and ,')|replace('_',' ')}}. 
-                   Any person approaching the camera should take priority over all other events.
-                   If you see a known person from memory, mention this in the response.
-                   Do not mention the prompt or describe the environment in your response.
-                   The response is an intial alert for a mobile phone security notification. 
+        prompt_person:
+          name: Person Prompt
+          description: Model prompt for person detection.
+          default: Summarize the image in a 1 sentence response, focusing on any person detected in the {{zone_names| join(' and ,')|replace('_',' ')}}. Prioritize describing a person approaching the camera, mentioning if they are known from memory. Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_car:
-          name: Prompt for Car
-          description: Custom prompt for car detection.
-          default: "A car was detected. Describe its make, model, and color if possible. Note any unusual activity."
-          selector:
-            text:
-              multiline: true
-              multiple: false
-        prompt_person:
-          name: Prompt for Person
-          description: Custom prompt for person detection.
-          default: "A person was detected. Describe their appearance, what they are doing, and if they are familiar."
+          name: Car Prompt
+          description: Model prompt for car detection.
+          default: Summarize the image in a 1 sentence response, focusing on any car detected in the {{zone_names| join(' and ,')|replace('_',' ')}}, describing its actions (e.g., parked, moving). Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_cat:
-          name: Prompt for Cat
-          description: Custom prompt for cat detection.
-          default: "A cat was detected. Describe its color and activity. Is it a known pet?"
+          name: Cat Prompt
+          description: Model prompt for cat detection.
+          default: Summarize the image in a 1 sentence response, focusing on any cat detected in the {{zone_names| join(' and ,')|replace('_',' ')}}, describing its behavior (e.g., walking, sitting). Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_dog:
-          name: Prompt for Dog
-          description: Custom prompt for dog detection.
-          default: "A dog was detected. Describe its breed, color, and activity. Is it a known pet?"
+          name: Dog Prompt
+          description: Model prompt for dog detection.
+          default: Summarize the image in a 1 sentence response, focusing on any dog detected in the {{zone_names| join(' and ,')|replace('_',' ')}}, describing its behavior (e.g., walking, barking). Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_bird:
-          name: Prompt for Bird
-          description: Custom prompt for bird detection.
-          default: "A bird was detected. Describe its type and activity. Is it a common bird for the area?"
+          name: Bird Prompt
+          description: Model prompt for bird detection.
+          default: Summarize the image in a 1 sentence response, focusing on any bird detected in the {{zone_names| join(' and ,')|replace('_',' ')}}, describing its behavior (e.g., flying, perched). Do not mention the prompt or describe the environment. The response is for a mobile phone security notification.
           selector:
             text:
               multiline: true
               multiple: false
-        target_width: 
-          name: Pixels  
+        prompt_default:
+          name: Default Prompt
+          description: Model prompt for other objects or when no specific object is detected.
+          default: Summarize the image in a 1 sentence response, concentrating on the {{input_objects| join(',')|replace('_', ' ')}} if seen within the {{zone_names| join(' and ,')|replace('_',' ')}}. Any person approaching the camera should take priority over all other events. If you see a known person from memory, mention this in the response. Do not mention the prompt or describe the environment. The response is an initial alert for a mobile phone security notification.
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        target_width:
+          name: Pixels
           description: Width in pixels to downscale.
           default: 1080
           selector:
@@ -302,8 +298,8 @@ blueprint:
                max: 1920
                step: 10
                mode: slider
-        tokens: 
-          name: Tokens 
+        tokens:
+          name: Tokens
           description: Maximum number of tokens to generate.
           default: 100
           selector:
@@ -319,23 +315,20 @@ blueprint:
           selector:
             boolean: {}
         use_memory:
-          name: Use Memory 
-          description: Use information stored in memory to provide additional context.
-            Memory must be setup in LLM Vision.
+          name: Use Memory
+          description: Use information stored in memory to provide additional context. Memory must be setup in LLM Vision.
           default: false
           selector:
             boolean: {}
         use_remember:
-          name: Use Remember 
-          description: Store this event in the timeline. 
-            Timeline must be setup in LLM Vision.
+          name: Use Remember
+          description: Store this event in the timeline. Timeline must be setup in LLM Vision.
           default: false
           selector:
             boolean: {}
         expose_image:
           name: Expose Image
-          description: Save image in llmvision for Timeline. 
-            Timeline must be setup in LLM Vision.
+          description: Save image in llmvision for Timeline. Timeline must be setup in LLM Vision.
           default: false
           selector:
             boolean: {}
@@ -343,13 +336,12 @@ blueprint:
           name: Delay Before Image
           description: Delay in seconds before processing Frigate snapshot.
           default: 2
-          selector: 
+          selector:
             number:
               min: 0
               max: 60
               step: 1
               mode: slider
-              
     clip_analyse:
       name: Review Clip Analyse
       icon: mdi:cog
@@ -358,68 +350,22 @@ blueprint:
       input:
         in_title_clip:
           name: No AI Notification Title
-          description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
+          description: Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
           default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert Update"
           selector:
             text:
               multiline: false
               multiple: false
         prompt2:
-          name: Default Prompt 
-          description: Model prompt for objects not specified below.
-          default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
-                   The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
-                   Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-                   Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
-                   Do not mention the prompt or describe the environment in your response.  
-                   Your response will be used for a mobile phone notification message with the clip attached.
-                  
+          name: Prompt
+          description: Model prompt for clip analysis.
+          default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}. The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}. Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing. Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next. Do not mention the prompt or describe the environment in your response. Your response will be used for a mobile phone notification message with the clip attached.
           selector:
             text:
               multiline: true
               multiple: false
-        prompt2_car:
-          name: Prompt for Car
-          description: Custom prompt for car detection in video clips.
-          default: "A car was detected in the video. Describe its movement, make, model, and color if possible. Note any unusual activity."
-          selector:
-            text:
-              multiline: true
-              multiple: false
-        prompt2_person:
-          name: Prompt for Person
-          description: Custom prompt for person detection in video clips.
-          default: "A person was detected in the video. Describe their actions, appearance, and if they are familiar."
-          selector:
-            text:
-              multiline: true
-              multiple: false
-        prompt2_cat:
-          name: Prompt for Cat
-          description: Custom prompt for cat detection in video clips.
-          default: "A cat was detected in the video. Describe its movement, color, and activity. Is it a known pet?"
-          selector:
-            text:
-              multiline: true
-              multiple: false
-        prompt2_dog:
-          name: Prompt for Dog
-          description: Custom prompt for dog detection in video clips.
-          default: "A dog was detected in the video. Describe its movement, breed, color, and activity. Is it a known pet?"
-          selector:
-            text:
-              multiline: true
-              multiple: false
-        prompt2_bird:
-          name: Prompt for Bird
-          description: Custom prompt for bird detection in video clips.
-          default: "A bird was detected in the video. Describe its flight pattern, type, and activity. Is it a common bird for the area?"
-          selector:
-            text:
-              multiline: true
-              multiple: false
-        target_width2: 
-          name: Pixels 
+        target_width2:
+          name: Pixels
           description: Width in pixels to downscale.
           default: 1080
           selector:
@@ -428,8 +374,8 @@ blueprint:
                max: 1920
                step: 10
                mode: slider
-        tokens2: 
-          name: Tokens 
+        tokens2:
+          name: Tokens
           description: Maximum number of tokens to generate.
           default: 100
           selector:
@@ -456,22 +402,19 @@ blueprint:
             boolean: {}
         use_memory2:
           name: Use Memory
-          description: Use information stored in memory to provide additional context.
-            Memory must be setup in LLM Vision.
+          description: Use information stored in memory to provide additional context. Memory must be setup in LLM Vision.
           default: false
           selector:
             boolean: {}
         use_remember2:
           name: Use Remember
-          description: Store this event in the timeline. 
-            Timeline must be setup in LLM Vision.
+          description: Store this event in the timeline. Timeline must be setup in LLM Vision.
           default: false
           selector:
             boolean: {}
         expose_clip:
           name: Expose Clip
-          description: Save clip in llmvision for Timeline. 
-            Timeline must be setup in LLM Vision.
+          description: Save clip in llmvision for Timeline. Timeline must be setup in LLM Vision.
           default: false
           selector:
             boolean: {}
@@ -485,14 +428,13 @@ blueprint:
               max: 60
               step: 1
               mode: slider
-              
     Downloader:
       name: Downloader Options
       icon: mdi:cog
       collapsed: true
       input:
         in_downloader:
-          name: Downloader Directory 
+          name: Downloader Directory
           description: Downloader integration root directory.
           default: downloader
           selector:
@@ -527,7 +469,6 @@ blueprint:
               max: 120
               step: 1
               mode: slider
-              
     notify:
       name: Notification Options
       icon: mdi:bell
@@ -535,31 +476,32 @@ blueprint:
       input:
         in_notify_devices:
           name: Notify Devices
-          description: The devices to send the notification to. Multiple devices may be
-            used. Only works with Home Assistant Companion mobile app.
+          description: The devices to send the notification to. Multiple devices may be used. Only works with Home Assistant Companion mobile app.
           default: []
           selector:
             device:
               multiple: true
               filter:
               - integration: mobile_app
-        in_telegram_bot:
-          name: Telegram Bot
-          description: The Telegram bot to send notifications through.
+        telegram_notify_service:
+          name: Telegram Notify Service
+          description: Telegram notification service (e.g., notify.telegram). Leave blank to disable Telegram notifications.
+          default: ""
           selector:
-            entity:
-              domain: telegram_bot
+            text:
+              multiline: false
               multiple: false
-        in_telegram_chat_id:
+        telegram_chat_id:
           name: Telegram Chat ID
-          description: The chat ID to send Telegram messages to.
+          description: Telegram Chat ID for sending notifications. Required if Telegram Notify Service is specified.
+          default: ""
           selector:
             text:
               multiline: false
               multiple: false
         click_action1:
-          name: Click Action New Event 
-          description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
+          name: Click Action New Event
+          description: Notification Click Action for New Event Notification. Default used is a Lovelace URL.
           default: /lovelace
           selector:
             select:
@@ -578,10 +520,9 @@ blueprint:
                 value: "{{gif}}"
               mode: dropdown
               custom_value: true
-              
         click_action2:
-          name: Click Action End Event 
-          description: Notification Click Action For End Event Notification . Default used is a Lovelace URL.
+          name: Click Action End Event
+          description: Notification Click Action For End Event Notification. Default used is a Lovelace URL.
           default: /lovelace
           selector:
             select:
@@ -600,7 +541,6 @@ blueprint:
                 value: "{{gif}}"
               mode: dropdown
               custom_value: true
-              
         cooldown:
           name: Cooldown
           description: Time in minutes to wait before running this automation again.
@@ -679,6 +619,8 @@ actions:
         Zones triggered: {{after_zones}} /n
         Zone match: {{zone_match}} /n 
         Notify devices: {{notify_names}} /n
+        Telegram notify service: {{telegram_notify_service}} /n
+        Telegram chat ID: {{telegram_chat_id}} /n
         Downloader root: {{root_dir}} /n
         Downloader sub: {{sub_dir}} /n
         Thumb url {{thumb}} /n
@@ -736,26 +678,25 @@ actions:
                       minutes: 0
                       seconds: !input delay_image
                       milliseconds: 0
-                  - variables:
-                      selected_prompt: >
-                        {% set object_found = objects[0] if objects | length > 0 else 'none' %}
-                        {% if object_found == 'car' %}
-                          {{ prompt_car }}
-                        {% elif object_found == 'person' %}
-                          {{ prompt_person }}
-                        {% elif object_found == 'cat' %}
-                          {{ prompt_cat }}
-                        {% elif object_found == 'dog' %}
-                          {{ prompt_dog }}
-                        {% elif object_found == 'bird' %}
-                          {{ prompt_bird }}
-                        {% else %}
-                          {{ prompt }}
-                        {% endif %}
                   - if:
                       - condition: template
                         value_template: "{{use_llm_image}}"
                     then:
+                      - variables:
+                          selected_prompt: >-
+                            {% if 'person' in objects %}
+                              {{prompt_person}}
+                            {% elif 'car' in objects %}
+                              {{prompt_car}}
+                            {% elif 'cat' in objects %}
+                              {{prompt_cat}}
+                            {% elif 'dog' in objects %}
+                              {{prompt_dog}}
+                            {% elif 'bird' in objects %}
+                              {{prompt_bird}}
+                            {% else %}
+                              {{prompt_default}}
+                            {% endif %}
                       - action: llmvision.image_analyzer
                         data:
                           provider: !input provider
@@ -764,11 +705,10 @@ actions:
                           expose_images: !input expose_image
                           use_memory: !input use_memory
                           image_file: "{{image_local}}"
-                          message: "{{ selected_prompt }}"
+                          message: "{{selected_prompt}}"
                           include_filename: false
                           target_width: !input target_width
                           max_tokens: !input tokens
-                          #temperature: !input temperature
                           generate_title: "{{gen_title}}"
                         response_variable: response
                       - delay:
@@ -779,12 +719,11 @@ actions:
                       - variables:
                           title: "{{response.response_title if gen_title else title_image}}"
                           msg: "{{response.response_text}}"
-                          
                     else:
                       - variables:
                           title: "{{title_image}}"
                           msg: "{{custom_msg}}"
-                  - alias: Send Intial notification to notify devices
+                  - alias: Send Initial notification to notify devices
                     repeat:
                       for_each: "{{notify_names}}"
                       sequence:
@@ -801,16 +740,20 @@ actions:
                               tag: "{{id}}"
                               ttl: 0
                               priority: high
-                  - alias: Send Telegram notification
+                  - alias: Send Initial notification to Telegram
                     if:
                       - condition: template
-                        value_template: "{{ in_telegram_bot is not none and in_telegram_chat_id is not none }}"
+                        value_template: "{{ telegram_notify_service != '' and telegram_chat_id != '' }}"
                     then:
-                      - service: "{{ in_telegram_bot }}.send_photo"
+                      - action: "{{ telegram_notify_service }}"
                         data:
-                          chat_id: "{{ in_telegram_chat_id }}"
-                          url: "{{ image }}"
-                          caption: "{{ title }}\n{{ msg }}"
+                          title: "{{title}}"
+                          message: "{{msg}}"
+                          data:
+                            photo:
+                              - url: "{{host}}{{thumb}}"
+                                caption: "{{msg}}"
+                            chat_id: "{{telegram_chat_id}}"
               - delay:
                   hours: 0
                   minutes: !input cooldown
@@ -865,22 +808,6 @@ actions:
                   minutes: 0
                   seconds: !input delay_clip
                   milliseconds: 0
-              - variables:
-                  selected_prompt2: >
-                    {% set object_found = objects[0] if objects | length > 0 else 'none' %}
-                    {% if object_found == 'car' %}
-                      {{ prompt2_car }}
-                    {% elif object_found == 'person' %}
-                      {{ prompt2_person }}
-                    {% elif object_found == 'cat' %}
-                      {{ prompt2_cat }}
-                    {% elif object_found == 'dog' %}
-                      {{ prompt2_dog }}
-                    {% elif object_found == 'bird' %}
-                      {{ prompt2_bird }}
-                    {% else %}
-                      {{ prompt2 }}
-                    {% endif %}
               - if:
                   - condition: template
                     value_template: "{{wait.trigger.id == 'clip_exists'}}"
@@ -898,10 +825,8 @@ actions:
                       include_filename: false
                       target_width: !input target_width2
                       max_tokens: !input tokens2
-                      #temperature: !input temperature2
                       generate_title: "{{gen_title2}}"
-                      message: "{{ selected_prompt2 }}"
-  
+                      message: !input prompt2
                     response_variable: response
                   - delay:
                       hours: 0
@@ -927,17 +852,20 @@ actions:
                               interruption-level: active
                               ttl: 0
                               priority: high
-                  - alias: Send Telegram notification
+                  - alias: Send Clip notification to Telegram
                     if:
                       - condition: template
-                        value_template: "{{ in_telegram_bot is not none and in_telegram_chat_id is not none }}"
+                        value_template: "{{ telegram_notify_service != '' and telegram_chat_id != '' }}"
                     then:
-                      - service: "{{ in_telegram_bot }}.send_video"
+                      - action: "{{ telegram_notify_service }}"
                         data:
-                          chat_id: "{{ in_telegram_chat_id }}"
-                          url: "{{ video }}"
-                          caption: "{{ response.title if gen_title2 else title_clip }}\n{{ response.response_text }}"
-              
+                          title: "{{response.title if gen_title2 else title_clip}}"
+                          message: "{{response.response_text}}"
+                          data:
+                            video:
+                              - url: "{{host}}{{gif}}"
+                                caption: "{{response.response_text}}"
+                            chat_id: "{{telegram_chat_id}}"
                   - delay:
                       hours: 0
                       minutes: !input cooldown
@@ -961,9 +889,17 @@ variables:
   downloader: !input in_downloader
   downloader_sub: !input in_downloader_sub
   notify_devices: !input in_notify_devices
+  telegram_notify_service: !input telegram_notify_service
+  telegram_chat_id: !input telegram_chat_id
   use_llm_image: !input in_use_llm_image
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
+  prompt_person: !input prompt_person
+  prompt_car: !input prompt_car
+  prompt_cat: !input prompt_cat
+  prompt_dog: !input prompt_dog
+  prompt_bird: !input prompt_bird
+  prompt_default: !input prompt_default
   event: "{{ trigger.payload_json }}"
   type: "{{event['type']}}"
   review_id: "{{event['after']['id']}}"
@@ -1044,4 +980,3 @@ variables:
   action2: !input in_action2
 mode: parallel
 max: 4
-
