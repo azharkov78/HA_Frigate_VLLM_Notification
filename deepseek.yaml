@@ -145,7 +145,7 @@ blueprint:
         in_host:
           name: Home Assistant IP Address.
           description: Home Assistant ip address.
-          default: http://192.168.1.1:8123
+          default: http://192.168.7.231:8123
           selector:
             text:
               multiline: false
@@ -165,7 +165,7 @@ blueprint:
         model:
           name: AI Model
           description: AI Model
-          default: gemini-1.5-flash
+          default: meta-llama/llama-4-scout-17b-16e-instruct
           selector:
             select:
               options: 
@@ -185,7 +185,7 @@ blueprint:
               - gemini-2.5-flash
               - llama-3.2-90b-vision-preview
               - llama-3.2-11b-vision-preview
-              - Llama-4-Scout-17B-16E-Instruct-FP8
+              - meta-llama/llama-4-scout-17b-16e-instruct
               - Llama-4-Maverick-17B-128E-Instruct-FP8
               multiple: false
               custom_value: true
@@ -198,13 +198,13 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert"
+          default: "{{camera_name}} - {{translated_objects| join(',')|replace('_', ' ')}} обнаружен"
           selector:
             text:
         in_custom_msg:
           name: No AI Notification Message
           description: Inital notificaion message if not using LLM Vision for the snapshot analysis.
-          default: "A {{objects| join(' and a ')|replace('_', ' ')}} was detected in the {{after_zones| join(' and the ')|replace('_', ' ' )}}" 
+          default: "На {{camera_name}} обнаружен {{translated_objects| join(' и ')}}."
           selector:
             text:
               multiline: true
@@ -218,13 +218,11 @@ blueprint:
         prompt:
           name: Prompt 
           description: Model prompt.
-          default: Summarise the image in a 1 sentence response,
-                   concentrate on the {{input_objects| join(',')|replace('_', ' ')}} if seen within
-                   the {{zone_names| join(' and ,')|replace('_',' ')}}. 
-                   Any person approaching the camera should take priority over all other events.
-                   If you see a known person from memory, mention this in the response.
-                   Do not mention the prompt or describe the environment in your response.
-                   The response is an intial alert for a mobile phone security notification. 
+          default: >-
+            Опишите изображение. На нём {{ translated_objects | join(' и ') }}.
+            Сосредоточьтесь на {{ translated_objects | join(',') }} и их действиях.
+            Не упоминайте подсказку и не описывайте обстановку.
+            Ответ должен быть кратким и понятным.
           selector:
             text:
               multiline: true
@@ -232,7 +230,10 @@ blueprint:
         prompt_car:
           name: Prompt для объекта "car"
           description: Промпт для анализа изображения с автомобилем.
-          default: "Опишите автомобиль на изображении. Сфокусируйтесь на его типе, цвете и возможных действиях."
+          default: >-
+            Попробуй узнать тип, марку, цвет и номерной знак автомобиля. Попробуй разпознать надписи на транспортном средстве, если они есть.
+            Если вы видите знакомую вам машину, упомяните об этом в ответе. Не упоминайте подсказку и не описывайте обстановку в своём ответе. Ответ напиши кратко.
+            Ответ должен быть на русском языке.
           selector:
             text:
               multiline: true
@@ -240,15 +241,18 @@ blueprint:
         prompt_person:
           name: Prompt для объекта "person"
           description: Промпт для анализа изображения с человеком.
-          default: "Опишите человека на изображении. Обратите внимание на его действия и возможные намерения."
+          default: >-
+            На кадре есть человек. Попробуй проанализировать пол, возраст, есть ли кто-либо рядом, что он будет делать или делает, и во что он одет. Если вы видите знакомого вам человека, упомяните об этом в ответе.
+            Не упоминайте подсказку и не описывайте обстановку в своём ответе. Ответ напиши кратко. Ответ должен быть на русском языке.
+            Ответ должен быть на русском языке.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_cat:
           name: Prompt для объекта "cat"
-          description: Промпт для анализа изображения с котом.
-          default: "Опишите кота на изображении. Обратите внимание на его поведение и окружение."
+          description: Промпт для анализа изображения с котом. 
+          default: "Опишите кота на изображении. Обратите внимание на его поведение и окружение. Ответ должен быть на русском языке. Ответ напиши кратко."
           selector:
             text:
               multiline: true
@@ -256,7 +260,7 @@ blueprint:
         prompt_dog:
           name: Prompt для объекта "dog"
           description: Промпт для анализа изображения с собакой.
-          default: "Опишите собаку на изображении. Обратите внимание на ее поведение и возможные действия."
+          default: "На кадре сть собака. Попробуй проанализировать поведение. Также постарайся узнать породу собаки.Ответ напиши кратко. Породу напиши в первой строке. Ответ должен быть на русском языке."
           selector:
             text:
               multiline: true
@@ -264,7 +268,7 @@ blueprint:
         prompt_bird:
           name: Prompt для объекта "bird"
           description: Промпт для анализа изображения с птицей.
-          default: "Опишите птицу на изображении. Обратите внимание на ее вид и поведение."
+          default: "На кадре есть птица. Попробуй проанализировать поведение. Также постарайся узнать породу птицы.Ответ напиши кратко. Породу напиши в первой строке. Ответ должен быть на русском языке."
           selector:
             text:
               multiline: true
@@ -335,60 +339,65 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
-          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}} Alert Update"
+          default: "{{camera_name}} - {{translated_objects| join(',')|replace('_', ' ')}} обнаружен"
           selector:
             text:
               multiline: false
               multiple: false
         prompt_video_car:
           name: Prompt for Video - Car
-          description: Prompt for analyzing video with a car.
-          default: "Describe the car in the video. Focus on its type, color, and possible actions."
+          description: Промпт для анализа видео с автомобилем.
+          default: >-
+            Попробуй узнать тип, марку, цвет и номерной знак автомобиля. Попробуй разпознать надписи на транспортном средстве, если они есть.
+            Если вы видите знакомую вам машину, упомяните об этом в ответе. Не упоминайте подсказку и не описывайте обстановку в своём ответе. Ответ напиши кратко.
+            Ответ должен быть на русском языке.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_video_person:
-          name: Prompt for Video - Person
-          description: Prompt for analyzing video with a person.
-          default: "Describe the person in the video. Pay attention to their actions and possible intentions."
+          name: Prompt для объекта "person"
+          description: Промпт для анализа видео с человеком.
+          default: >-
+            На кадре есть человек. Попробуй проанализировать пол, возраст, есть ли кто-либо рядом, что он будет делать или делает, и во что он одет. Если вы видите знакомого вам человека, упомяните об этом в ответе.
+            Не упоминайте подсказку и не описывайте обстановку в своём ответе. Ответ напиши кратко. Ответ должен быть на русском языке.
+            Ответ должен быть на русском языке.
           selector:
             text:
               multiline: true
               multiple: false
         prompt_video_cat:
-          name: Prompt for Video - Cat
-          description: Prompt for analyzing video with a cat.
-          default: "Describe the cat in the video. Pay attention to its behavior and surroundings."
+          name: Prompt для объекта "cat"
+          description: Промпт для анализа видео с котом. 
+          default: "Опишите кота на изображении. Обратите внимание на его поведение и окружение. Ответ должен быть на русском языке. Ответ напиши кратко."
           selector:
             text:
               multiline: true
               multiple: false
         prompt_video_dog:
-          name: Prompt for Video - Dog
-          description: Prompt for analyzing video with a dog.
-          default: "Describe the dog in the video. Pay attention to its behavior and possible actions."
+          name: Prompt для объекта "dog"
+          description: Промпт для анализа видео с собакой.
+          default: "На кадре сть собака. Попробуй проанализировать поведение. Также постарайся узнать породу собаки.Ответ напиши кратко. Породу напиши в первой строке. Ответ должен быть на русском языке."
           selector:
             text:
               multiline: true
               multiple: false
         prompt_video_bird:
-          name: Prompt for Video - Bird
-          description: Prompt for analyzing video with a bird.
-          default: "Describe the bird in the video. Pay attention to its species and behavior."
+          name: Prompt для объекта "bird"
+          description: Промпт для анализа видео с птицей.
+          default: "На кадре есть птица. Попробуй проанализировать поведение. Также постарайся узнать породу птицы.Ответ напиши кратко. Породу напиши в первой строке. Ответ должен быть на русском языке."
           selector:
             text:
               multiline: true
               multiple: false
         prompt_video_default:
           name: Default Video Prompt
-          description: Default prompt for analyzing videos.
-          default: "Analyze the video which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
-                   The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
-                   Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
-                   Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
-                   Do not mention the prompt or describe the environment in your response.
-                   Your response will be used for a mobile phone notification message with the clip attached."
+          description: Model prompt.
+          default: >-
+            Опишите изображение. На нём {{ translated_objects | join(' и ') }}.
+            Сосредоточьтесь на {{ translated_objects | join(',') }} и их действиях.
+            Не упоминайте подсказку и не описывайте обстановку.
+            Ответ должен быть кратким и понятным.
           selector:
             text:
               multiline: true
@@ -476,7 +485,7 @@ blueprint:
         in_downloader_sub:
           name: Downloader Sub Directory
           description: Define a sub directory within your downloader root directory.
-          default: 
+          default: telegram
           selector:
             text:
               multiline: false
@@ -991,5 +1000,15 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
+  translated_objects: >-
+  {% set mapping = {
+    'person': 'человек',
+    'car': 'машина',
+    'cat': 'кот',
+    'dog': 'собака',
+    'face': 'лицо',
+    'bird': 'птица'
+  } %}
+  {{ objects | map('replace', mapping) | list }}
 mode: parallel
 max: 4
