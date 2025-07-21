@@ -721,7 +721,7 @@ actions:
                   - alias: Send notification to Telegram
                     if:
                       - condition: template
-                        value_template: "{{ in_telegram_chat_id | trim != '' }}"
+                        value_template: "{{ in_telegram_chat_id | string | trim != '' }}"
                     then:
                       - action: telegram_bot.send_message
                         data:
@@ -834,7 +834,7 @@ actions:
                   - alias: Update notification in Telegram
                     if:
                       - condition: template
-                        value_template: "{{ in_telegram_chat_id | trim != '' }}"
+                        value_template: "{{ in_telegram_chat_id | string | trim != '' }}"
                     then:
                       - action: telegram_bot.send_message
                         data:
