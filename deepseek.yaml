@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.46) + Telegram
+  name: Frigate LLM Notification Latest (v0.47) + Telegram
   author: whag + модификация
   description: >
      Basic requirements:<br />
@@ -1000,5 +1000,17 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
+  prompt_video_car: !input prompt_video_car
+  prompt_video_person: !input prompt_video_person
+  prompt_video_cat: !input prompt_video_cat
+  prompt_video_dog: !input prompt_video_dog
+  prompt_video_bird: !input prompt_video_bird
+  prompt_video_default: !input prompt_video_default
+  prompt_car: !input prompt_video_car
+  prompt_person: !input prompt_video_person
+  prompt_cat: !input prompt_video_cat
+  prompt_dog: !input prompt_video_dog
+  prompt_bird: !input prompt_video_bird
+  prompt: !input prompt
 mode: parallel
 max: 4
