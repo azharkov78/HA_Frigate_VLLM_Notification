@@ -442,7 +442,7 @@ blueprint:
           description: Select Telegram notification service to use
           selector:
             entity:
-              integration: telegram_bot
+              integration: telegram
               domain: notify
         click_action1:
           name: Click Action New Event 
