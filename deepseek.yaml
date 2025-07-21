@@ -1,40 +1,18 @@
 blueprint:
-  name: Frigate LLM Notification Latest Qwen (v0.1)
-  author: whag
+  name: Frigate LLM Notification Latest (v0.42) + Telegram 
+  author: whag + модификация
   description: >
      Basic requirements:<br />
-     - Home Assistant with an MQTT broker setup. <br />
-     - Frigate integration with MQTT setup. <br />
-     Link: https://github.com/blakeblackshear/frigate-hass-integration <br />
-     - LLM Vision integration with provider setup. <br />
-     Link: https://github.com/valentinfrlch/ha-llmvision <br />
-     - Downloader integration. <br />
-     Link: https://www.home-assistant.io/integrations/downloader/<br /><br />
-     
-     Information:<br />
-     - Only suitable for one Frigate camera, use multiple instances of this automation for multiple cameras if required. <br />
-     - LLM Vision requires a provider setup for the automation to function, remember and memory options are optional. <br /><br />
-     Description: <br />
-     Use LLM Vision to analyse frigate snapshots and clips and send notifications via the Home Assistant companion app. <br />
-     Monitors MQTT frigate/reviews topic of types [new],[update] and [end]. <br />
-     The Downloader integration has been used for storing the frigate files locally before sending them to LLM. In my experience this has improved the reliability for usingh LLM Vision with Frigate.
-     Note that the downloader folder will need maintained separately (i.e. old files deleted or backed up). This can be achieved automatically via a shell command or similar <br />
-     This automation runs in parallel mode. <br /><br />
-     Tested on Android only. <br /><br />
-     
-     Variables which may be useful for the custom message and AI prompts
-       - {{input_objects}} = Objects required<br />
-       - {{objects}} = Objects found<br />
-       - {{input_camera_name}} = Camera required<br />
-       - {{camera_name}} = Camera triggered<br />
-       - {{zone_names}} = Zones required<br />
-       - {{before_zones}} = Zones triggered first<br />
-       - {{after_zones}} = Zones triggered last<br />
-       - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
-       - {{detections{1] = Event ID 2<br />
-
-     Version: v 0.1
-
+     - Home Assistant с MQTT брокером<br />
+     - Интеграция Frigate с MQTT<br />
+     - Интеграция LLM Vision с провайдером<br />
+     - Интеграция Downloader<br />
+     <br />
+     Дополнительно:<br />
+     - Интеграция Telegram Bot для отправки уведомлений<br />
+     <br />
+     Этот блюпринт анализирует события Frigate через LLM Vision и отправляет уведомления через Telegram и Companion App.
+     Поддерживает разные промпты для объектов car, person, cat, dog, bird.
   domain: automation
   input:
     frigate:
@@ -211,7 +189,6 @@ blueprint:
               - Llama-4-Maverick-17B-128E-Instruct-FP8
               multiple: false
               custom_value: true
-              
     image_analyse:
       name: Snapshot Analyse
       icon: mdi:cog
@@ -252,46 +229,46 @@ blueprint:
             text:
               multiline: true
               multiple: false
-      prompt_car:
-        name: Prompt для объекта "car"
-        description: Промпт для анализа изображения с автомобилем.
-        default: "Опишите автомобиль на изображении. Сфокусируйтесь на его типе, цвете и возможных действиях."
-        selector:
-          text:
-            multiline: true
-            multiple: false
-      prompt_person:
-        name: Prompt для объекта "person"
-        description: Промпт для анализа изображения с человеком.
-        default: "Опишите человека на изображении. Обратите внимание на его действия и возможные намерения."
-        selector:
-          text:
-            multiline: true
-            multiple: false
-      prompt_cat:
-        name: Prompt для объекта "cat"
-        description: Промпт для анализа изображения с котом.
-        default: "Опишите кота на изображении. Обратите внимание на его поведение и окружение."
-        selector:
-          text:
-            multiline: true
-            multiple: false
-      prompt_dog:
-        name: Prompt для объекта "dog"
-        description: Промпт для анализа изображения с собакой.
-        default: "Опишите собаку на изображении. Обратите внимание на ее поведение и возможные действия."
-        selector:
-          text:
-            multiline: true
-            multiple: false
-      prompt_bird:
-        name: Prompt для объекта "bird"
-        description: Промпт для анализа изображения с птицей.
-        default: "Опишите птицу на изображении. Обратите внимание на ее вид и поведение."
-        selector:
-          text:
-            multiline: true
-            multiple: false
+        prompt_car:
+          name: Prompt для объекта "car"
+          description: Промпт для анализа изображения с автомобилем.
+          default: "Опишите автомобиль на изображении. Сфокусируйтесь на его типе, цвете и возможных действиях."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_person:
+          name: Prompt для объекта "person"
+          description: Промпт для анализа изображения с человеком.
+          default: "Опишите человека на изображении. Обратите внимание на его действия и возможные намерения."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_cat:
+          name: Prompt для объекта "cat"
+          description: Промпт для анализа изображения с котом.
+          default: "Опишите кота на изображении. Обратите внимание на его поведение и окружение."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_dog:
+          name: Prompt для объекта "dog"
+          description: Промпт для анализа изображения с собакой.
+          default: "Опишите собаку на изображении. Обратите внимание на ее поведение и возможные действия."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_bird:
+          name: Prompt для объекта "bird"
+          description: Промпт для анализа изображения с птицей.
+          default: "Опишите птицу на изображении. Обратите внимание на ее вид и поведение."
+          selector:
+            text:
+              multiline: true
+              multiple: false
         target_width: 
           name: Pixels  
           description: Width in pixels to downscale.
@@ -349,7 +326,6 @@ blueprint:
               max: 60
               step: 1
               mode: slider
-              
     clip_analyse:
       name: Review Clip Analyse
       icon: mdi:cog
@@ -373,7 +349,6 @@ blueprint:
                    Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
                    Do not mention the prompt or describe the environment in your response.  
                    Your response will be used for a mobile phone notification message with the clip attached.
-                  
           selector:
             text:
               multiline: true
@@ -445,8 +420,6 @@ blueprint:
               max: 60
               step: 1
               mode: slider
-
-              
     Downloader:
       name: Downloader Options
       icon: mdi:cog
@@ -488,7 +461,6 @@ blueprint:
               max: 120
               step: 1
               mode: slider
-              
     notify:
       name: Notification Options
       icon: mdi:bell
@@ -504,20 +476,20 @@ blueprint:
               multiple: true
               filter:
               - integration: mobile_app
-      in_telegram_bot:
-        name: Telegram Bot
-        description: Выберите Telegram-бота для отправки уведомлений.
-        selector:
-          config_entry:
-            integration: telegram_bot
-      in_telegram_chat_id:
-        name: Telegram Chat ID
-        description: ID чата или имя пользователя Telegram, куда будут отправляться уведомления.
-        default: ""
-        selector:
-          text:
-            multiline: false
-            multiple: false
+        in_telegram_bot:
+          name: Telegram Bot
+          description: Выберите Telegram-бота для отправки уведомлений.
+          selector:
+            config_entry:
+              integration: telegram_bot
+        in_telegram_chat_id:
+          name: Telegram Chat ID
+          description: ID чата или имя пользователя Telegram, куда будут отправляться уведомления.
+          default: ""
+          selector:
+            text:
+              multiline: false
+              multiple: false
         click_action1:
           name: Click Action New Event 
           description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
@@ -539,7 +511,6 @@ blueprint:
                 value: "{{gif}}"
               mode: dropdown
               custom_value: true
-              
         click_action2:
           name: Click Action End Event 
           description: Notification Click Action For End Event Notification . Default used is a Lovelace URL.
@@ -561,7 +532,6 @@ blueprint:
                 value: "{{gif}}"
               mode: dropdown
               custom_value: true
-              
         cooldown:
           name: Cooldown
           description: Time in minutes to wait before running this automation again.
@@ -589,7 +559,6 @@ blueprint:
           default: []
           selector:
             action: {}
-
 triggers:
   - trigger: mqtt
     topic: "{{frigate_topic}}"
@@ -630,7 +599,7 @@ actions:
         Camera triggered: {{input_camera_name}} /n  
         Detections ID's: {{detections}} /n 
         Detection 1 ID: {{id}} /n 
-        Objects required: {{input_objects}} /n 
+        Objects required: {{input_objects}} /n
         Objects found: {{objects}} /n
         Object match: {{objects_match}} /n
         Sub Labels required: {{input_sub_labels}} /n
@@ -709,11 +678,15 @@ actions:
                           expose_images: !input expose_image
                           use_memory: !input use_memory
                           image_file: "{{image_local}}"
-                          message: !input prompt
+                          message: >-
+                            {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
+                              {{ 'prompt_' + objects[0] }}
+                            {% else %}
+                              {{ prompt }}
+                            {% endif %}
                           include_filename: false
                           target_width: !input target_width
                           max_tokens: !input tokens
-                          #temperature: !input temperature
                           generate_title: "{{gen_title}}"
                         response_variable: response
                       - delay:
@@ -724,7 +697,6 @@ actions:
                       - variables:
                           title: "{{response.response_title if gen_title else title_image}}"
                           msg: "{{response.response_text}}"
-                          
                     else:
                       - variables:
                           title: "{{title_image}}"
@@ -746,6 +718,21 @@ actions:
                               tag: "{{id}}"
                               ttl: 0
                               priority: high
+                  - alias: Send notification to Telegram
+                    if:
+                      - condition: template
+                        value_template: "{{ in_telegram_chat_id | trim != '' }}"
+                    then:
+                      - action: telegram_bot.send_message
+                        data:
+                          message: "{{msg}}"
+                          title: "{{title}}"
+                          chat_id: "{{in_telegram_chat_id}}"
+                          parse_mode: "HTML"
+                          disable_notification: false
+                          data:
+                            photo:
+                              - url: "{{host}}{{image}}"
               - delay:
                   hours: 0
                   minutes: !input cooldown
@@ -755,20 +742,6 @@ actions:
             until:
               - condition: template
                 value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
-        - alias: Send notification to Telegram
-          if:
-            - condition: template
-              value_template: "{{ in_telegram_chat_id | trim != '' }}"
-          then:
-            - action: telegram_bot.send_message
-                message: "{{msg}}"
-                title: "{{title}}"
-                chat_id: "{{in_telegram_chat_id}}"
-                parse_mode: "HTML"
-                disable_notification: false
-                data:
-                  photo:
-                    - url: "{{host}}{{image}}"
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
@@ -831,10 +804,8 @@ actions:
                       include_filename: false
                       target_width: !input target_width2
                       max_tokens: !input tokens2
-                      #temperature: !input temperature2
                       generate_title: "{{gen_title2}}"
                       message: !input prompt2
-  
                     response_variable: response
                   - delay:
                       hours: 0
@@ -860,7 +831,21 @@ actions:
                               interruption-level: active
                               ttl: 0
                               priority: high
-              
+                  - alias: Update notification in Telegram
+                    if:
+                      - condition: template
+                        value_template: "{{ in_telegram_chat_id | trim != '' }}"
+                    then:
+                      - action: telegram_bot.send_message
+                        data:
+                          message: "{{response.response_text}}"
+                          title: "{{response.title if gen_title2 else title_clip}}"
+                          chat_id: "{{in_telegram_chat_id}}"
+                          parse_mode: "HTML"
+                          disable_notification: false
+                          data:
+                            video:
+                              - url: "{{host}}{{video}}"
                   - delay:
                       hours: 0
                       minutes: !input cooldown
@@ -965,7 +950,5 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
-  prompt:
-    "{{ 'prompt_' + objects[0] if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] else prompt }}"
 mode: parallel
 max: 4
