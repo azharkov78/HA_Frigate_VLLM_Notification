@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.43)
+  name: Frigate LLM Notification Latest (v0.44)
   author: whag
   description: >
      Basic requirements:<br />
@@ -33,10 +33,10 @@ blueprint:
        - {{zone_names}} = Zones required<br />
        - {{before_zones}} = Zones triggered first<br />
        - {{after_zones}} = Zones triggered last<br />
-       - {{detections{0] = Event ID 1 (i.e.triggering event)<br />
-       - {{detections{1] = Event ID 2<br />
+       - {{detections{0]}} = Event ID 1 (i.e.triggering event)<br />
+       - {{detections{1]}} = Event ID 2<br />
 
-     Version: v 0.43
+     Version: v 0.44
 
   domain: automation
   input:
@@ -168,8 +168,8 @@ blueprint:
               multiline: false
               multiple: true
         in_host:
-          name: Home Assistant IP Address.
-          description: Home Assistant ip address.
+          name: Home Assistant IP Address
+          description: Home Assistant IP address
           default: http://192.168.1.1:8123
           selector:
             text:
@@ -183,7 +183,7 @@ blueprint:
       input:
         provider:
           name: Provider
-          description: Provider to use for analysis.
+          description: Provider to use for analysis
           selector:
             config_entry:
               integration: llmvision
@@ -194,24 +194,24 @@ blueprint:
           selector:
             select:
               options: 
-              - gpt-4o
-              - gpt-4o-mini
-              - gpt-4.1
-              - claude-3-7-sonnet-latest
-              - claude-3-5-sonnet-latest
-              - claude-3-5-haiku-latest
-              - claude-sonnet-4-20250514
-              - claude-opus-4-20250514
-              - gemini-1.5-flash
-              - gemini-1.5-pro
-              - gemini-2.0-flash
-              - gemini-2.0-flash-lite
-              - gemini-2.5-pro
-              - gemini-2.5-flash
-              - llama-3.2-90b-vision-preview
-              - llama-3.2-11b-vision-preview
-              - Llama-4-Scout-17B-16E-Instruct-FP8
-              - Llama-4-Maverick-17B-16E-Instruct-FP8
+                - gpt-4o
+                - gpt-4o-mini
+                - gpt-4.1
+                - claude-3-7-sonnet-latest
+                - claude-3-5-sonnet-latest
+                - claude-3-5-haiku-latest
+                - claude-sonnet-4-20250514
+                - claude-opus-4-20250514
+                - gemini-1.5-flash
+                - gemini-1.5-pro
+                - gemini-2.0-flash
+                - gemini-2.0-flash-lite
+                - gemini-2.5-pro
+                - gemini-2.5-flash
+                - llama-3.2-90b-vision-preview
+                - llama-3.2-11b-vision-preview
+                - Llama-4-Scout-17B-16E-Instruct-FP8
+                - Llama-4-Maverick-17B-128E-Instruct-FP8
               multiple: false
               custom_value: true
     image_analyse:
@@ -294,20 +294,20 @@ blueprint:
           default: 1080
           selector:
             number:
-               min: 512
-               max: 1920
-               step: 10
-               mode: slider
+              min: 512
+              max: 1920
+              step: 10
+              mode: slider
         tokens:
           name: Tokens
           description: Maximum number of tokens to generate.
           default: 100
           selector:
             number:
-               min: 1
-               max: 300
-               step: 1
-               mode: slider
+              min: 1
+              max: 300
+              step: 1
+              mode: slider
         in_gen_title:
           name: Generate Title
           description: AI generated notification title.
@@ -370,30 +370,30 @@ blueprint:
           default: 1080
           selector:
             number:
-               min: 512
-               max: 1920
-               step: 10
-               mode: slider
+              min: 512
+              max: 1920
+              step: 10
+              mode: slider
         tokens2:
           name: Tokens
           description: Maximum number of tokens to generate.
           default: 100
           selector:
             number:
-               min: 1
-               max: 300
-               step: 1
-               mode: slider
+              min: 1
+              max: 300
+              step: 1
+              mode: slider
         max_frames:
           name: Max Frames
           description: How many frames to analyse for clip.
           default: 3
           selector:
             number:
-               min: 1
-               max: 10
-               step: 1
-               mode: slider
+              min: 1
+              max: 10
+              step: 1
+              mode: slider
         in_gen_title2:
           name: Generate Title
           description: AI generated clip title.
@@ -482,18 +482,19 @@ blueprint:
             device:
               multiple: true
               filter:
-              - integration: mobile_app
+                - integration: mobile_app
         telegram_notify_service:
           name: Telegram Notify Service
-          description: Telegram notification service (e.g., notify.telegram). Leave blank to disable Telegram notifications.
+          description: Select the Telegram notification service to use. Leave blank to disable Telegram notifications.
           default: ""
           selector:
-            text:
-              multiline: false
+            entity:
+              integration: telegram_bot
+              domain: notify
               multiple: false
         telegram_chat_id:
           name: Telegram Chat ID
-          description: Telegram Chat ID for sending notifications. Required if Telegram Notify Service is specified.
+          description: Telegram Chat ID for sending notifications. Required if Telegram Notify Service is selected.
           default: ""
           selector:
             text:
@@ -506,39 +507,39 @@ blueprint:
           selector:
             select:
               options:
-              - label: Lovelace URL
-                value: /Lovelace
-              - label: View Snapshot
-                value: "{{image}}"
-              - label: View Clip
-                value: "{{video}}"
-              - label: View Thumbnail
-                value: "{{thumb}}"
-              - label: View Snapshot with bounding box
-                value: "{{image}}?bbox=1"
-              - label: View Review GIF
-                value: "{{gif}}"
+                - label: Lovelace URL
+                  value: /lovelace
+                - label: View Snapshot
+                  value: "{{image}}"
+                - label: View Clip
+                  value: "{{video}}"
+                - label: View Thumbnail
+                  value: "{{thumb}}"
+                - label: View Snapshot with bounding box
+                  value: "{{image}}?bbox=1"
+                - label: View Review GIF
+                  value: "{{gif}}"
               mode: dropdown
               custom_value: true
         click_action2:
           name: Click Action End Event
-          description: Notification Click Action For End Event Notification. Default used is a Lovelace URL.
+          description: Notification Click Action for End Event Notification. Default used is a Lovelace URL.
           default: /lovelace
           selector:
             select:
               options:
-              - label: Lovelace URL
-                value: /Lovelace
-              - label: View Snapshot
-                value: "{{image}}"
-              - label: View Clip
-                value: "{{video}}"
-              - label: View Thumbnail
-                value: "{{thumb}}"
-              - label: View Snapshot with bounding box
-                value: "{{image}}?bbox=1"
-              - label: View Review GIF
-                value: "{{gif}}"
+                - label: Lovelace URL
+                  value: /lovelace
+                - label: View Snapshot
+                  value: "{{image}}"
+                - label: View Clip
+                  value: "{{video}}"
+                - label: View Thumbnail
+                  value: "{{thumb}}"
+                - label: View Snapshot with bounding box
+                  value: "{{image}}?bbox=1"
+                - label: View Review GIF
+                  value: "{{gif}}"
               mode: dropdown
               custom_value: true
         cooldown:
@@ -639,121 +640,121 @@ actions:
           seconds: 2
           milliseconds: 0
       - parallel:
-        - alias: Run Custom Actions New 
-          choose:
-            - conditions: "{{action1|length != 0}}"
-              sequence: !input in_action1
-        - alias: Repeat Until file exists or 2 retries
-          repeat:
-            sequence:
-              - action: downloader.download_file
-                continue_on_error: true
-                metadata: {}
-                data:
-                  overwrite: true
-                  url: "{{host}}{{image}}"
-                  subdir: "{{sub_dir}}"
-                  filename: "{{id}}_snapshot.jpg"
-              - alias: Wait for downloader to complete
-                wait_for_trigger:
-                  - trigger: event
-                    event_type: downloader_download_completed
-                    event_data:
-                      url: "{{host}}{{image}}"
-                      filename: "{{id}}_snapshot.jpg"
-                    id: image_exists
-                continue_on_timeout: true
-                timeout:
-                  hours: 0
-                  minutes: 0
-                  seconds: !input download_image_wait
-                  milliseconds: 0
-              - alias: If file exists run LLM Image Analyzer and send notification
-                if:
-                  - condition: template
-                    value_template: "{{ wait.trigger.id == 'image_exists' }}"
-                then:
-                  - delay:
-                      hours: 0
-                      minutes: 0
-                      seconds: !input delay_image
-                      milliseconds: 0
-                  - if:
-                      - condition: template
-                        value_template: "{{use_llm_image}}"
-                    then:
-                      - variables:
-                          selected_prompt: >-
-                            {% if 'person' in objects %}
-                              {{prompt_person}}
-                            {% elif 'car' in objects %}
-                              {{prompt_car}}
-                            {% elif 'cat' in objects %}
-                              {{prompt_cat}}
-                            {% elif 'dog' in objects %}
-                              {{prompt_dog}}
-                            {% elif 'bird' in objects %}
-                              {{prompt_bird}}
-                            {% else %}
-                              {{prompt_default}}
-                            {% endif %}
-                      - action: llmvision.image_analyzer
-                        data:
-                          provider: !input provider
-                          model: !input model
-                          remember: !input use_remember
-                          expose_images: !input expose_image
-                          use_memory: !input use_memory
-                          image_file: "{{image_local}}"
-                          message: "{{selected_prompt}}"
-                          include_filename: false
-                          target_width: !input target_width
-                          max_tokens: !input tokens
-                          generate_title: "{{gen_title}}"
-                        response_variable: response
-                      - delay:
-                          hours: 0
-                          minutes: 0
-                          seconds: 5
-                          milliseconds: 0
-                      - variables:
-                          title: "{{response.response_title if gen_title else title_image}}"
-                          msg: "{{response.response_text}}"
-                    else:
-                      - variables:
-                          title: "{{title_image}}"
-                          msg: "{{custom_msg}}"
-                  - alias: Send Initial notification to notify devices
-                    repeat:
-                      for_each: "{{notify_names}}"
-                      sequence:
-                        - action: notify.{{ repeat.item }}
+          - alias: Run Custom Actions New 
+            choose:
+              - conditions: "{{action1|length != 0}}"
+                sequence: !input in_action1
+          - alias: Repeat Until file exists or 2 retries
+            repeat:
+              sequence:
+                - action: downloader.download_file
+                  continue_on_error: true
+                  metadata: {}
+                  data:
+                    overwrite: true
+                    url: "{{host}}{{image}}"
+                    subdir: "{{sub_dir}}"
+                    filename: "{{id}}_snapshot.jpg"
+                - alias: Wait for downloader to complete
+                  wait_for_trigger:
+                    - trigger: event
+                      event_type: downloader_download_completed
+                      event_data:
+                        url: "{{host}}{{image}}"
+                        filename: "{{id}}_snapshot.jpg"
+                      id: image_exists
+                  continue_on_timeout: true
+                  timeout:
+                    hours: 0
+                    minutes: 0
+                    seconds: !input download_image_wait
+                    milliseconds: 0
+                - alias: If file exists run LLM Image Analyzer and send notification
+                  if:
+                    - condition: template
+                      value_template: "{{ wait.trigger.id == 'image_exists' }}"
+                  then:
+                    - delay:
+                        hours: 0
+                        minutes: 0
+                        seconds: !input delay_image
+                        milliseconds: 0
+                    - if:
+                        - condition: template
+                          value_template: "{{use_llm_image}}"
+                      then:
+                        - variables:
+                            selected_prompt: >-
+                              {% if 'person' in objects %}
+                                {{prompt_person}}
+                              {% elif 'car' in objects %}
+                                {{prompt_car}}
+                              {% elif 'cat' in objects %}
+                                {{prompt_cat}}
+                              {% elif 'dog' in objects %}
+                                {{prompt_dog}}
+                              {% elif 'bird' in objects %}
+                                {{prompt_bird}}
+                              {% else %}
+                                {{prompt_default}}
+                              {% endif %}
+                        - action: llmvision.image_analyzer
+                          data:
+                            provider: !input provider
+                            model: !input model
+                            remember: !input use_remember
+                            expose_images: !input expose_image
+                            use_memory: !input use_memory
+                            image_file: "{{image_local}}"
+                            message: "{{selected_prompt}}"
+                            include_filename: false
+                            target_width: !input target_width
+                            max_tokens: !input tokens
+                            generate_title: "{{gen_title}}"
+                          response_variable: response
+                        - delay:
+                            hours: 0
+                            minutes: 0
+                            seconds: 5
+                            milliseconds: 0
+                        - variables:
+                            title: "{{response.response_title if gen_title else title_image}}"
+                            msg: "{{response.response_text}}"
+                      else:
+                        - variables:
+                            title: "{{title_image}}"
+                            msg: "{{custom_msg}}"
+                    - alias: Send Initial notification to notify devices
+                      repeat:
+                        for_each: "{{notify_names}}"
+                        sequence:
+                          - action: notify.{{ repeat.item }}
+                            data:
+                              title: "{{title}}"
+                              message: "{{msg}}"
+                              data:
+                                image: "{{thumb}}"
+                                entity_id: "{{input_camera}}"
+                                url: !input click_action1
+                                clickAction: !input click_action1
+                                group: "{{camera}}-frigate-notification"
+                                tag: "{{id}}"
+                                ttl: 0
+                                priority: high
+                    - alias: Send Initial notification to Telegram
+                      if:
+                        - condition: template
+                          value_template: "{{ telegram_notify_service != '' and telegram_chat_id != '' }}"
+                      then:
+                        - action: "{{ telegram_notify_service }}"
                           data:
                             title: "{{title}}"
                             message: "{{msg}}"
                             data:
-                              image: "{{thumb}}"
-                              entity_id: "{{input_camera}}"
-                              url: !input click_action1
-                              clickAction: !input click_action1
-                              group: "{{camera}}-frigate-notification"
-                              tag: "{{id}}"
-                              ttl: 0
-                              priority: high
-                  - alias: Send Initial notification to Telegram
-                    if:
-                      - condition: template
-                        value_template: "{{ telegram_notify_service != '' and telegram_chat_id != '' }}"
-                    then:
-                      - action: "{{ telegram_notify_service }}"
-                        data:
-                          title: "{{title}}"
-                          message: "{{msg}}"
-                          data:
-                            photo:
-                              - url: "{{host}}{{thumb}}"
-                                caption: "{{msg}}"
-                            chat_id: "{{telegram_chat_id}}"
+                              photo:
+                                - url: "{{host}}{{thumb}}"
+                                  caption: "{{msg}}"
+                              chat_id: "{{telegram_chat_id}}"
               - delay:
                   hours: 0
                   minutes: !input cooldown
@@ -775,106 +776,106 @@ actions:
           seconds: 5
           milliseconds: 0
       - parallel:
-        - alias: Run Custom Actions End 
-          choose:
-            - conditions: "{{action2|length != 0}}"
-              sequence: !input in_action2
-        - repeat:
-            sequence:
-              - action: downloader.download_file
-                continue_on_error: true
-                metadata: {}
-                data:
-                  overwrite: true
-                  url: "{{host}}{{video}}"
-                  subdir: "{{sub_dir}}"
-                  filename: "{{id}}_clip.mp4"
-              - alias: Wait for downloader to complete
-                wait_for_trigger:
-                  - trigger: event
-                    event_type: downloader_download_completed
-                    event_data:
-                      url: "{{host}}{{video}}"
-                      filename: "{{id}}_clip.mp4"
-                    id: clip_exists
-                continue_on_timeout: true
-                timeout:
-                  hours: 0
-                  minutes: 0
-                  seconds: !input download_clip_wait
-                  milliseconds: 0
-              - delay:
-                  hours: 0
-                  minutes: 0
-                  seconds: !input delay_clip
-                  milliseconds: 0
-              - if:
-                  - condition: template
-                    value_template: "{{wait.trigger.id == 'clip_exists'}}"
-                then:
-                  - action: llmvision.video_analyzer
-                    metadata: {}
-                    data:
-                      provider: !input provider
-                      model: !input model
-                      remember: !input use_remember2
-                      expose_images: !input expose_clip
-                      use_memory: !input use_memory2
-                      video_file: "{{video_local}}"
-                      max_frames: !input max_frames
-                      include_filename: false
-                      target_width: !input target_width2
-                      max_tokens: !input tokens2
-                      generate_title: "{{gen_title2}}"
-                      message: !input prompt2
-                    response_variable: response
-                  - delay:
-                      hours: 0
-                      minutes: 0
-                      seconds: 1
-                      milliseconds: 0
-                  - alias: Update notification to notify devices
-                    repeat:
-                      for_each: "{{notify_names}}"
-                      sequence:
-                        - action: notify.{{ repeat.item }}
+          - alias: Run Custom Actions End 
+            choose:
+              - conditions: "{{action2|length != 0}}"
+                sequence: !input in_action2
+          - repeat:
+              sequence:
+                - action: downloader.download_file
+                  continue_on_error: true
+                  metadata: {}
+                  data:
+                    overwrite: true
+                    url: "{{host}}{{video}}"
+                    subdir: "{{sub_dir}}"
+                    filename: "{{id}}_clip.mp4"
+                - alias: Wait for downloader to complete
+                  wait_for_trigger:
+                    - trigger: event
+                      event_type: downloader_download_completed
+                      event_data:
+                        url: "{{host}}{{video}}"
+                        filename: "{{id}}_clip.mp4"
+                      id: clip_exists
+                  continue_on_timeout: true
+                  timeout:
+                    hours: 0
+                    minutes: 0
+                    seconds: !input download_clip_wait
+                    milliseconds: 0
+                - delay:
+                    hours: 0
+                    minutes: 0
+                    seconds: !input delay_clip
+                    milliseconds: 0
+                - if:
+                    - condition: template
+                      value_template: "{{wait.trigger.id == 'clip_exists'}}"
+                  then:
+                    - action: llmvision.video_analyzer
+                      metadata: {}
+                      data:
+                        provider: !input provider
+                        model: !input model
+                        remember: !input use_remember2
+                        expose_images: !input expose_clip
+                        use_memory: !input use_memory2
+                        video_file: "{{video_local}}"
+                        max_frames: !input max_frames
+                        include_filename: false
+                        target_width: !input target_width2
+                        max_tokens: !input tokens2
+                        generate_title: "{{gen_title2}}"
+                        message: !input prompt2
+                      response_variable: response
+                    - delay:
+                        hours: 0
+                        minutes: 0
+                        seconds: 1
+                        milliseconds: 0
+                    - alias: Update notification to notify devices
+                      repeat:
+                        for_each: "{{notify_names}}"
+                        sequence:
+                          - action: notify.{{ repeat.item }}
+                            data:
+                              title: "{{response.title if gen_title2 else title_clip}}"
+                              message: "{{response.response_text}}"
+                              data:
+                                video: "{{gif}}"
+                                image: "{{gif}}"
+                                entity_id: "{{input_camera}}"
+                                url: !input click_action2
+                                clickAction: !input click_action2
+                                group: "{{camera}}-frigate-notification"
+                                tag: "{{id}}"
+                                interruption-level: active
+                                ttl: 0
+                                priority: high
+                    - alias: Send Clip notification to Telegram
+                      if:
+                        - condition: template
+                          value_template: "{{ telegram_notify_service != '' and telegram_chat_id != '' }}"
+                      then:
+                        - action: "{{ telegram_notify_service }}"
                           data:
                             title: "{{response.title if gen_title2 else title_clip}}"
                             message: "{{response.response_text}}"
                             data:
-                              video: "{{gif}}"
-                              image: "{{gif}}"
-                              entity_id: "{{input_camera}}"
-                              url: !input click_action2
-                              clickAction: !input click_action2
-                              group: "{{camera}}-frigate-notification"
-                              tag: "{{id}}"
-                              interruption-level: active
-                              ttl: 0
-                              priority: high
-                  - alias: Send Clip notification to Telegram
-                    if:
-                      - condition: template
-                        value_template: "{{ telegram_notify_service != '' and telegram_chat_id != '' }}"
-                    then:
-                      - action: "{{ telegram_notify_service }}"
-                        data:
-                          title: "{{response.title if gen_title2 else title_clip}}"
-                          message: "{{response.response_text}}"
-                          data:
-                            video:
-                              - url: "{{host}}{{gif}}"
-                                caption: "{{response.response_text}}"
-                            chat_id: "{{telegram_chat_id}}"
-                  - delay:
-                      hours: 0
-                      minutes: !input cooldown
-                      seconds: 0
-                      milliseconds: 0
-                    alias: Cooldown
-            until:
-              - condition: template
-                value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
+                              video:
+                                - url: "{{host}}{{gif}}"
+                                  caption: "{{response.response_text}}"
+                              chat_id: "{{telegram_chat_id}}"
+                    - delay:
+                        hours: 0
+                        minutes: !input cooldown
+                        seconds: 0
+                        milliseconds: 0
+                      alias: Cooldown
+              until:
+                - condition: template
+                  value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
@@ -904,8 +905,7 @@ variables:
   type: "{{event['type']}}"
   review_id: "{{event['after']['id']}}"
   input_camera_name: >-
-    {{input_camera|expand|map(attribute='attributes.camera_name',
-    default='none')|list}}
+    {{input_camera|expand|map(attribute='attributes.camera_name', default='none')|list}}
   camera: "{{event['after']['camera']}}"
   camera_name: "{{ camera | replace('_', ' ') | title }}"
   camera_match: "{{input_camera_name|select('equalto', camera)|list|length>0 }}"
@@ -913,59 +913,57 @@ variables:
   id: "{{ detections[0] }}"
   objects: "{{ event['after']['data']['objects']}}"
   objects_match: >-
-    {{input_objects | length == 0 or (input_objects |select('in', objects) |list
-    |length > 0) }}
+    {{input_objects | length == 0 or (input_objects |select('in', objects) |list |length > 0) }}
   sub_labels: "{{ event['after']['data']['sub_labels']}}"
   sub_labels_match: >-    
-    {{input_sub_labels | length == 0 or (input_sub_labels |select('in', sub_labels) |list
-    |length > 0) }}
+    {{input_sub_labels | length == 0 or (input_sub_labels |select('in', sub_labels) |list |length > 0) }}
   zone_names: >-
-        {% set device_zones = input_zones %}
-        {% set zones = device_zones + custom_zones %}
-        {% set ns = namespace(device_names=[]) %} 
-        {% for device_id in zones %}
-        {% if device_attr(device_id, "name") != None %}
+    {% set device_zones = input_zones %}
+    {% set zones = device_zones + custom_zones %}
+    {% set ns = namespace(device_names=[]) %}
+    {% for device_id in zones %}
+      {% if device_attr(device_id, "name") != None %}
         {% set device_name = device_attr(device_id, "name") %}
         {% set sanitized_name = device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
         {% set ns.device_names = ns.device_names + [sanitized_name] %}
-        {% else%}
-        {% set ns.device_names = ns.device_names + [device_id  | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_")] %}
-        {% endif %} 
-        {% endfor %} 
-        {{ ns.device_names }}
+      {% else %}
+        {% set ns.device_names = ns.device_names + [device_id | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_")] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.device_names }}
   before_zones: "{{ event['before']['data']['zones'] | lower | default([]) }}"
   after_zones: "{{ event['after']['data']['zones'] | lower | default([]) }}"
   zone_entered: >-
     {{ zone_names | length == 0 or ((zone_names | select('in', (before_zones + after_zones)) |list |length) > 0) }}
   all_zones_entered: >-
-    {{true if (zone_names | reject('in',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
+    {{true if (zone_names | reject('in', (before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
   zone_match: "{{zone_entered and all_zones_entered}}"
   input_severity: !input in_severity
   severity: "{{event['before']['severity'] + event['after']['severity']}}"
   severity_match: "{{input_severity|select('in', severity)|list|length > 0}}"
   notify_names: >-
-    {% set ns = namespace(device_names=[]) %} 
-    {% for device_id in notify_devices%}
+    {% set ns = namespace(device_names=[]) %}
+    {% for device_id in notify_devices %}
       {% set device_name = device_attr(device_id, "name") %}
       {% set sanitized_name = "mobile_app_" + device_name | lower | regex_replace("[^a-z0-9_\- ]", "") | replace(" ", "_") | replace("-", "_") %}
       {% set ns.device_names = ns.device_names + [sanitized_name] %}
-    {% endfor %} 
+    {% endfor %}
     {{ ns.device_names }}
   root_dir: >-
     {% set dir = downloader|trim %}
-    {%if dir|length > 0%}
-     {% if dir[-1] != "/" %}
-     {% set dir = dir + "/" %}
-     {% endif%}
-    {% endif%}
+    {% if dir|length > 0 %}
+      {% if dir[-1] != "/" %}
+        {% set dir = dir + "/" %}
+      {% endif %}
+    {% endif %}
     {{dir}}
   sub_dir: >-
     {% set dir = downloader_sub|trim %}
-    {%if dir|length > 0%}
-     {% if dir[-1] != "/" %}
-     {% set dir = dir + "/" %}
-     {% endif%}
-    {% endif%}
+    {% if dir|length > 0 %}
+      {% if dir[-1] != "/" %}
+        {% set dir = dir + "/" %}
+      {% endif %}
+    {% endif %}
     {{dir}}
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
