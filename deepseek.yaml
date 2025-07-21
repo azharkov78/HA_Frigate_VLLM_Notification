@@ -725,16 +725,12 @@ actions:
                       - condition: template
                         value_template: "{{ chat_id | int > 0 }}"
                     then:
-                      - action: telegram_bot.send_message
+                      - action: telegram_bot.send_photo
                         data:
-                          message: "{{msg}}"
-                          title: "{{title}}"
-                          chat_id: "{{in_telegram_chat_id}}"
-                          parse_mode: "HTML"
+                          caption: "{{msg}}"
+                          target: "{{in_telegram_chat_id}}"
                           disable_notification: false
-                          data:
-                            photo:
-                              - url: "{{host}}{{image}}"
+                          url: "{{host}}{{image}}"
               - delay:
                   hours: 0
                   minutes: !input cooldown
@@ -838,16 +834,12 @@ actions:
                       - condition: template
                         value_template: "{{ chat_id | int > 0 }}"
                     then:
-                      - action: telegram_bot.send_message
+                      - action: telegram_bot.send_video
                         data:
-                          message: "{{response.response_text}}"
-                          title: "{{response.title if gen_title2 else title_clip}}"
-                          chat_id: "{{in_telegram_chat_id}}"
-                          parse_mode: "HTML"
+                          caption: "{{response.title if gen_title2 else title_clip}}"
+                          target: "{{in_telegram_chat_id}}"
                           disable_notification: false
-                          data:
-                            video:
-                              - url: "{{host}}{{video}}"
+                          url: "{{host}}{{video}}"
                   - delay:
                       hours: 0
                       minutes: !input cooldown
