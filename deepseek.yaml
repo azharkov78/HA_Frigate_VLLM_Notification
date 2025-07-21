@@ -721,7 +721,7 @@ actions:
                   - alias: Send notification to Telegram
                     if:
                       - condition: template
-                        value_template: "{{ in_telegram_chat_id | string | trim != '' }}"
+                        value_template: "{{ chat_id != '' }}"
                     then:
                       - action: telegram_bot.send_message
                         data:
@@ -834,7 +834,7 @@ actions:
                   - alias: Update notification in Telegram
                     if:
                       - condition: template
-                        value_template: "{{ in_telegram_chat_id | string | trim != '' }}"
+                        value_template: "{{ chat_id != '' }}"
                     then:
                       - action: telegram_bot.send_message
                         data:
@@ -939,6 +939,7 @@ variables:
      {% endif%}
     {% endif%}
     {{dir}}
+  chat_id: "{{ in_telegram_chat_id | string | trim }}"
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
   thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
