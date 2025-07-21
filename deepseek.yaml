@@ -761,7 +761,6 @@ actions:
               value_template: "{{ in_telegram_chat_id | trim != '' }}"
           then:
             - action: telegram_bot.send_message
-              
                 message: "{{msg}}"
                 title: "{{title}}"
                 chat_id: "{{in_telegram_chat_id}}"
