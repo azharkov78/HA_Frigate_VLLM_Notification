@@ -487,7 +487,9 @@ blueprint:
           description: ID чата или имя пользователя Telegram, куда будут отправляться уведомления.
           default: "125219695"
           selector:
-            number
+            text:
+              multiple: false
+              multiline: false
         click_action1:
           name: Click Action New Event 
           description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
