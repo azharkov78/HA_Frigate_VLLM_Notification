@@ -718,6 +718,9 @@ actions:
                               tag: "{{id}}"
                               ttl: 0
                               priority: high
+                  - action: logger.log
+                    data:
+                      message: "Telegram Chat ID: [{{ chat_id }}], Raw: [{{ in_telegram_chat_id }}]"
                   - alias: Send notification to Telegram
                     if:
                       - condition: template
