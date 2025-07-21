@@ -941,6 +941,7 @@ variables:
      {% endif%}
     {% endif%}
     {{dir}}
+  in_telegram_chat_id: !input in_telegram_chat_id
   chat_id: "{{ in_telegram_chat_id | string | trim }}"
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
