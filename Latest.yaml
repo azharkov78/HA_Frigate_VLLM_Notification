@@ -1,5 +1,5 @@
 blueprint:
-  name: Frigate LLM Notification Latest (v0.44)
+  name: Frigate LLM Notification Latest (v0.45)
   author: whag
   description: >
      Basic requirements:<br />
@@ -36,7 +36,7 @@ blueprint:
        - {{detections{0]}} = Event ID 1 (i.e.triggering event)<br />
        - {{detections{1]}} = Event ID 2<br />
 
-     Version: v 0.44
+     Version: v 0.45
 
   domain: automation
   input:
@@ -345,8 +345,8 @@ blueprint:
     clip_analyse:
       name: Review Clip Analyse
       icon: mdi:cog
-      collapsed: true
       description: Frigate review clip analyse options
+      collapsed: true
       input:
         in_title_clip:
           name: No AI Notification Title
@@ -431,6 +431,7 @@ blueprint:
     Downloader:
       name: Downloader Options
       icon: mdi:cog
+      description: Downloader options
       collapsed: true
       input:
         in_downloader:
@@ -472,6 +473,7 @@ blueprint:
     notify:
       name: Notification Options
       icon: mdi:bell
+      description: Notification options
       collapsed: true
       input:
         in_notify_devices:
@@ -555,6 +557,7 @@ blueprint:
     Actions:
       name: Custom Actions
       icon: mdi:bell
+      description: Custom actions
       collapsed: true
       input:
         in_action1:
@@ -581,6 +584,7 @@ triggers:
     payload: end
     value_template: "{{value_json['type']}}"
     id: End event
+
 conditions:
   - condition: template
     value_template: "{{camera_match}}"
@@ -597,6 +601,7 @@ conditions:
   - condition: template
     value_template: "{{severity_match}}"
     alias: Valid Alert
+
 actions:
   - action: logbook.log
     metadata: {}
@@ -604,30 +609,30 @@ actions:
       name: LLM Vision Frigate Notification log
       entity_id: "{{this.entity_id}}"
       message: >-
-        Event type: {{type}} /n
-        Review id: {{review_id}} /n
-        Input camera: {{input_camera}} /n
-        Camera triggered: {{input_camera_name}} /n  
-        Detections ID's: {{detections}} /n 
-        Detection 1 ID: {{id}} /n 
-        Objects required: {{input_objects}} /n 
-        Objects found: {{objects}} /n
-        Object match: {{objects_match}} /n
-        Sub Labels required: {{input_sub_labels}} /n
-        Sub Labels found: {{sub_labels}} /n
-        Sub Labels match: {{sub_labels_match}} /n
-        Zones required: {{zone_names}} /n
-        Zones triggered: {{after_zones}} /n
-        Zone match: {{zone_match}} /n 
-        Notify devices: {{notify_names}} /n
-        Telegram notify service: {{telegram_notify_service}} /n
-        Telegram chat ID: {{telegram_chat_id}} /n
-        Downloader root: {{root_dir}} /n
-        Downloader sub: {{sub_dir}} /n
-        Thumb url {{thumb}} /n
-        Snapshot url {{image}}  /n 
-        Clip url {{video}} /n
-        GIF url {{gif}}
+        Event type: {{type}}
+        Review id: {{review_id}}
+        Input camera: {{input_camera}}
+        Camera triggered: {{input_camera_name}}
+        Detections ID's: {{detections}}
+        Detection 1 ID: {{id}}
+        Objects required: {{input_objects}}
+        Objects found: {{objects}}
+        Object match: {{objects_match}}
+        Sub Labels required: {{input_sub_labels}}
+        Sub Labels found: {{sub_labels}}
+        Sub Labels match: {{sub_labels_match}}
+        Zones required: {{zone_names}}
+        Zones triggered: {{after_zones}}
+        Zone match: {{zone_match}}
+        Notify devices: {{notify_names}}
+        Telegram notify service: {{telegram_notify_service}}
+        Telegram chat ID: {{telegram_chat_id}}
+        Downloader root: {{root_dir}}
+        Downloader sub: {{sub_dir}}
+        Thumb url: {{thumb}}
+        Snapshot url: {{image}}
+        Clip url: {{video}}
+        GIF url: {{gif}}
   - alias: Event is new or update Do LLM image analysis and send notification
     if:
       - condition: trigger
@@ -640,7 +645,7 @@ actions:
           seconds: 2
           milliseconds: 0
       - parallel:
-          - alias: Run Custom Actions New 
+          - alias: Run Custom Actions New
             choose:
               - conditions: "{{action1|length != 0}}"
                 sequence: !input in_action1
@@ -755,15 +760,15 @@ actions:
                                 - url: "{{host}}{{thumb}}"
                                   caption: "{{msg}}"
                               chat_id: "{{telegram_chat_id}}"
-              - delay:
-                  hours: 0
-                  minutes: !input cooldown
-                  seconds: 0
-                  milliseconds: 0
-                alias: Cooldown
-            until:
-              - condition: template
-                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
+                - delay:
+                    hours: 0
+                    minutes: !input cooldown
+                    seconds: 0
+                    milliseconds: 0
+                  alias: Cooldown
+              until:
+                - condition: template
+                  value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
@@ -776,7 +781,7 @@ actions:
           seconds: 5
           milliseconds: 0
       - parallel:
-          - alias: Run Custom Actions End 
+          - alias: Run Custom Actions End
             choose:
               - conditions: "{{action2|length != 0}}"
                 sequence: !input in_action2
@@ -876,8 +881,10 @@ actions:
               until:
                 - condition: template
                   value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
+
 trigger_variables:
   frigate_topic: frigate/reviews
+
 variables:
   frigate_topic: frigate/reviews
   input_camera: !input in_camera
@@ -976,5 +983,6 @@ variables:
   title_clip: !input in_title_clip
   action1: !input in_action1
   action2: !input in_action2
+
 mode: parallel
 max: 4
