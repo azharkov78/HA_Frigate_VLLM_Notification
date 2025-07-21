@@ -443,7 +443,7 @@ blueprint:
           selector:
             entity:
               - integration: telegram
-              domain: notify
+                domain: notify
         click_action1:
           name: Click Action New Event 
           description: Notification Click Action for New Event Notification . Default used is a Lovelace URL.
