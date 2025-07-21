@@ -26,7 +26,7 @@ blueprint:
           description: Frigate cameras only
           selector:
             entity:
-              multiple: false
+              multiple: true
               filter:
                 - integration: frigate
                   domain: camera
@@ -340,15 +340,55 @@ blueprint:
             text:
               multiline: false
               multiple: false
-        prompt2:
-          name: Prompt 
-          description: Model prompt.
-          default: Analyse the video clip which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
+        prompt_video_car:
+          name: Prompt for Video - Car
+          description: Prompt for analyzing video with a car.
+          default: "Describe the car in the video. Focus on its type, color, and possible actions."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_video_person:
+          name: Prompt for Video - Person
+          description: Prompt for analyzing video with a person.
+          default: "Describe the person in the video. Pay attention to their actions and possible intentions."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_video_cat:
+          name: Prompt for Video - Cat
+          description: Prompt for analyzing video with a cat.
+          default: "Describe the cat in the video. Pay attention to its behavior and surroundings."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_video_dog:
+          name: Prompt for Video - Dog
+          description: Prompt for analyzing video with a dog.
+          default: "Describe the dog in the video. Pay attention to its behavior and possible actions."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_video_bird:
+          name: Prompt for Video - Bird
+          description: Prompt for analyzing video with a bird.
+          default: "Describe the bird in the video. Pay attention to its species and behavior."
+          selector:
+            text:
+              multiline: true
+              multiple: false
+        prompt_video_default:
+          name: Default Video Prompt
+          description: Default prompt for analyzing videos.
+          default: "Analyze the video which should contain the following objects {{input_objects| join(',')|replace('_', ' ')}}
                    The areas of interest are the {{zone_names| join(' and ,')|replace('_',' ')}}
                    Focus on the objects referenced previously which are entering the areas of interest and describe what they are doing.
                    Consider what the {{input_objects|join(',')|replace('_',' ')}} is doing, why, and what it might do next.
-                   Do not mention the prompt or describe the environment in your response.  
-                   Your response will be used for a mobile phone notification message with the clip attached.
+                   Do not mention the prompt or describe the environment in your response.
+                   Your response will be used for a mobile phone notification message with the clip attached."
           selector:
             text:
               multiline: true
@@ -803,7 +843,12 @@ actions:
                       target_width: !input target_width2
                       max_tokens: !input tokens2
                       generate_title: "{{gen_title2}}"
-                      message: !input prompt2
+                      message: >-
+                        {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
+                          {{ 'prompt_video_' + objects[0] }}
+                        {% else %}
+                          {{ prompt_video_default }}
+                        {% endif %}
                     response_variable: response
                   - delay:
                       hours: 0
