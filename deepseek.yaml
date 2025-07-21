@@ -731,7 +731,7 @@ actions:
                           image_file: "{{image_local}}"
                           message: >-
                             {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                              {{ self['prompt_' + objects[0]] }}  # Это вернёт содержимое соответствующей переменной
+                              {{ self['prompt_' + objects[0]] }}
                             {% else %}
                               {{ prompt }}
                             {% endif %}
@@ -854,7 +854,7 @@ actions:
                       generate_title: "{{gen_title2}}"
                       message: >-
                         {% if objects[0] in ['car', 'person', 'cat', 'dog', 'bird'] %}
-                          {{ self['prompt_video_' + objects[0]] }}  # Это вернёт содержимое соответствующей переменной
+                          {{ self['prompt_video_' + objects[0]] }}
                         {% else %}
                           {{ prompt_video_default }}
                         {% endif %}
