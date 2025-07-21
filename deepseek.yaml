@@ -721,7 +721,7 @@ actions:
                   - alias: Send notification to Telegram
                     if:
                       - condition: template
-                        value_template: "{{ chat_id != '' }}"
+                        value_template: "{{ chat_id | int > 0 }}"
                     then:
                       - action: telegram_bot.send_message
                         data:
@@ -834,7 +834,7 @@ actions:
                   - alias: Update notification in Telegram
                     if:
                       - condition: template
-                        value_template: "{{ chat_id != '' }}"
+                        value_template: "{{ chat_id | int > 0 }}"
                     then:
                       - action: telegram_bot.send_message
                         data:
