@@ -944,7 +944,20 @@ variables:
     {{input_camera|expand|map(attribute='attributes.camera_name',
     default='none')|list}}
   camera: "{{event['after']['camera']}}"
-  camera_name: "{{ camera | replace('_', ' ') | title }}"
+  camera_name: >-
+    {{ {
+      'domofon': 'Домофон',
+      'MainPTZCamera': 'Поворотная',
+      'backyard': 'Задний двор',
+      'garage': 'Гараж',
+      'povorot': 'Хозблок',
+      'hozblock': 'Задний двор',
+      'MainHouseCam': 'На доме',
+      'gryadki': 'Грядки',
+      'zona_otdiha': 'Зона отдыха',
+      'banya': 'Баня',
+      'terrassa': 'Террасса'
+    }.get(camera, camera | replace('_', ' ') | title) }}
   camera_match: "{{input_camera_name|select('equalto', camera)|list|length>0 }}"
   detections: "{{ event['after']['data']['detections'] }}"
   id: "{{ detections[0] }}"
