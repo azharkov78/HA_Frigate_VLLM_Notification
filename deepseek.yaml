@@ -882,6 +882,7 @@ actions:
                       seconds: 1
                       milliseconds: 0
                   - alias: Update notification to notify devices
+                    continue_on_error: true
                     repeat:
                       for_each: "{{notify_names}}"
                       sequence:
