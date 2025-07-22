@@ -875,6 +875,7 @@ actions:
                           {{ prompt_video_default }}
                         {% endif %}
                     response_variable: response
+                    continue_on_error: true
                   - delay:
                       hours: 0
                       minutes: 0
@@ -909,7 +910,7 @@ actions:
                           caption: "{{response.title if gen_title2 else title_clip}}"
                           target: "{{in_telegram_chat_id}}"
                           disable_notification: false
-                          url: "{{host}}{{video}}"
+                          url: "{{host}}{{video-30sec}}"
                   - delay:
                       hours: 0
                       minutes: !input cooldown
@@ -1007,6 +1008,9 @@ variables:
   chat_id: "{{ in_telegram_chat_id | string | trim }}"
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: "{{root_dir}}{{sub_dir}}{{id}}_clip.mp4"
+  start: "{{ event['after']['start_time'] | float }}"
+  clip_end: "(start + 30)"
+  video-30sec: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4?start={{start}}&end={{clip_end}}
   thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
   image: /api/frigate/notifications/{{id}}/snapshot.jpg
   image_local: "{{root_dir}}{{sub_dir}}{{id}}_snapshot.jpg"
