@@ -847,6 +847,7 @@ actions:
                     value_template: "{{wait.trigger.id == 'clip_exists'}}"
                 then:
                   - action: llmvision.video_analyzer
+                    continue_on_error: true
                     metadata: {}
                     data:
                       provider: !input provider
@@ -875,7 +876,6 @@ actions:
                           {{ prompt_video_default }}
                         {% endif %}
                     response_variable: response
-                    continue_on_error: true
                   - delay:
                       hours: 0
                       minutes: 0
