@@ -847,7 +847,7 @@ actions:
                 alias: Cooldown
             until:
               - condition: template
-                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
+                value_template: '{{wait.trigger.id == ''image_exists'' or repeat.index == 2}}'
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
