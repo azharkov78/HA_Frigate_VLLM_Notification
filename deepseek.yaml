@@ -235,7 +235,7 @@ blueprint:
         in_title_image:
           name: No AI Notification Title
           description: Notification title for snapshot. If you are using LLM for image analyse and want a AI generated title ensure [Generate Title] below is enabled.
-          default: '{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}}  обнаружен"
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}}  обнаружен
           selector:
             text: {}
         in_custom_msg:
@@ -375,7 +375,7 @@ blueprint:
         in_title_clip:
           name: No AI Notification Title
           description:  Notification title for review clip. If you want a AI generated title ensure [Generate Title] below is enabled.
-          default: '{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}}  обнаружен"
+          default: "{{camera_name}} - {{sub_labels| join(',')|replace('_', ' ')}}  обнаружен"
           selector:
             text:
               multiline: false
