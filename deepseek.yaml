@@ -1070,7 +1070,7 @@ variables:
   chat_id: '{{ in_telegram_chat_id | string | trim }}'
   video: /api/frigate/notifications/{{id}}/{{camera}}/clip.mp4
   video_local: '{{root_dir}}{{sub_dir}}{{id}}_clip.mp4'
-  start: '{{ event['after']['start_time'] | float }}'
+  start: '{{ event[''after''][''start_time''] | float }}'
   clip_end: '{{ start | float + 30 }}'
   video_30sec: "/api/frigate/notifications/{{id}}/{{camera}}/clip.mp4?start={{start}}&end={{clip_end}}'
   thumb: /api/frigate/notifications/{{id}}/thumbnail.jpg
