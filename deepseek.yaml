@@ -993,7 +993,7 @@ variables:
   event: '{{ trigger.payload_json }}'
   type: '{{event[''type'']}}'
   review_id: '{{event[''after''][''id'']}}'
-  input_camera_name:'{{input_camera|expand|map(attribute=''attributes.camera_name'',
+  input_camera_name: '{{input_camera|expand|map(attribute=''attributes.camera_name'',
     default=''none'')|list}}'
   camera: '{{event[''after''][''camera'']}}'
   camera_name: >-
