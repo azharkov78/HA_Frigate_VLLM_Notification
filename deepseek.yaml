@@ -1043,8 +1043,7 @@ variables:
   after_zones: '{{ event[''after''][''data''][''zones''] | lower | default([]) }}'
   zone_entered: >-
     {{ zone_names | length == 0 or ((zone_names | select(''in'', (before_zones + after_zones)) |list |length) > 0) }}
-  all_zones_entered: >-
-    {{true if (zone_names | reject(''in'',(before_zones + after_zones)) | list | length == 0 and all_zones) or all_zones == false else false }}
+  all_zones_entered: "{{ (zone_names | reject('in', (before_zones + after_zones)) | list | length == 0 and all_zones) or not all_zones }}"
   zone_match: '{{zone_entered and all_zones_entered}}'
   input_severity: !input in_severity
   severity: '{{event[''before''][''severity''] + event[''after''][''severity'']}}'
