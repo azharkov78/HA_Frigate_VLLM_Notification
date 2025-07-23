@@ -940,7 +940,7 @@ actions:
                         - action: notify.{{ repeat.item }}
                           data:
                             title: '{{response.title if gen_title2 else title_clip}}'
-                            message: '{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}'
+                            message: "{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}"
                             data:
                               video: '{{gif}}'
                               image: '{{gif}}'
@@ -959,7 +959,7 @@ actions:
                     then:
                       - action: telegram_bot.send_video
                         data:
-                          caption:  '{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}'
+                          caption:  "{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}"
                           target: '{{in_telegram_chat_id}}'
                           disable_notification: false
                           url: '{{host}}{{video_30sec}}'
