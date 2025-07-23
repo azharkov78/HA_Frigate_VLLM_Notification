@@ -838,7 +838,7 @@ actions:
                           caption: '{{msg}}'
                           target: '{{in_telegram_chat_id}}'
                           disable_notification: false
-                          url: '{{host}}{{image}}?bbox=1"
+                          url: '{{host}}{{image}}?bbox=1'
               - delay:
                   hours: 0
                   minutes: !input cooldown
