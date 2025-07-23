@@ -847,7 +847,7 @@ actions:
                 alias: Cooldown
             until:
               - condition: template
-                value_template: '{{wait.trigger.id == 'image_exists' or repeat.index == 2}}'
+                value_template: "{{wait.trigger.id == 'image_exists' or repeat.index == 2}}"
   - alias: Event is end Do LLM video analysis and send notification
     if:
       - condition: trigger
@@ -895,7 +895,7 @@ actions:
                   milliseconds: 0
               - if:
                   - condition: template
-                    value_template: '{{wait.trigger.id == 'clip_exists'}}'
+                    value_template: '{{wait.trigger.id == ''clip_exists''}}'
                 then:
                   - action: llmvision.video_analyzer
                     continue_on_error: true
@@ -971,7 +971,7 @@ actions:
                     alias: Cooldown
             until:
               - condition: template
-                value_template: '{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}'
+                value_template: '{{wait.trigger.id == ''clip_exists'' or repeat.index == 2}}'
 trigger_variables:
   frigate_topic: frigate/reviews
 variables:
