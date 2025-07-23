@@ -162,7 +162,7 @@ blueprint:
           selector:
             config_entry:
               integration: llmvision
-        model:
+        model_image:
           name: AI Model
           description: AI Model
           default: gemini-2.0-flash-lite
@@ -192,12 +192,12 @@ blueprint:
               multiple: false
               custom_value: true
         provider_clip:
-          name: Provider For Image Analysis
+          name: Provider For Clips Analysis
           description: Provider to use for analyse.
           selector:
             config_entry:
               integration: llmvision
-        model:
+        model_clip:
           name: AI Model
           description: AI Model
           default: gemini-2.0-flash-lite
@@ -760,7 +760,7 @@ actions:
                       - action: llmvision.image_analyzer
                         data:
                           provider: !input provider_image
-                          model: !input model
+                          model: !input model_image
                           remember: !input use_remember
                           expose_images: !input expose_image
                           use_memory: !input use_memory
@@ -887,7 +887,7 @@ actions:
                     metadata: {}
                     data:
                       provider: !input provider_clip
-                      model: !input model
+                      model: !input model_clip
                       remember: !input use_remember2
                       expose_images: !input expose_clip
                       use_memory: !input use_memory2
