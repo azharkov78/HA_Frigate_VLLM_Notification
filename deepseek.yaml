@@ -685,38 +685,38 @@ conditions:
     value_template: '{{severity_match}}'
     alias: Valid Alert
 actions:
-- if:
-    - condition: template
-      value_template: '{{enable_log}}'
-  then:
-    - action: logbook.log
-      metadata: {}
-      data:
-        name: LLM Vision Frigate Notification log
-        entity_id: '{{this.entity_id}}'
-        message: '___Event type: {{type}}
-        ___Review id: {{review_id}}
-        ___Input camera: {{input_camera}}
-        ___Camera triggered: {{input_camera_name}}
-        ___Detections ID''s: {{detections}}
-        ___Detection 1 ID: {{id}}
-        ___Objects required: {{input_objects}}
-        ___Objects found: {{objects}}
-        ___Object match: {{objects_match}}
-        ___Sub Labels required: {{input_sub_labels}}
-        ___Sub Labels found: {{sub_labels}}
-        ___Sub Labels match: {{sub_labels_match}}
-        ___Zones required: {{zone_names}}
-        ___Zones triggered before: {{before_zones}}
-        ___Zones triggered after: {{after_zones}}
-        ___Zone match: {{zone_match}}
-        ___Notify devices: {{notify_names}}
-        ___Downloader root: {{root_dir}}
-        ___Downloader sub: {{sub_dir}}
-        ___Thumb url {{thumb}}
-        ___Snapshot url {{image}}
-        ___Clip url {{video}}
-        ___GIF url {{gif}}___'
+  - if:
+      - condition: template
+        value_template: '{{enable_log}}'
+    then:
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: LLM Vision Frigate Notification log
+          entity_id: '{{this.entity_id}}'
+          message: '___Event type: {{type}}
+          ___Review id: {{review_id}}
+          ___Input camera: {{input_camera}}
+          ___Camera triggered: {{input_camera_name}}
+          ___Detections ID''s: {{detections}}
+          ___Detection 1 ID: {{id}}
+          ___Objects required: {{input_objects}}
+          ___Objects found: {{objects}}
+          ___Object match: {{objects_match}}
+          ___Sub Labels required: {{input_sub_labels}}
+          ___Sub Labels found: {{sub_labels}}
+          ___Sub Labels match: {{sub_labels_match}}
+          ___Zones required: {{zone_names}}
+          ___Zones triggered before: {{before_zones}}
+          ___Zones triggered after: {{after_zones}}
+          ___Zone match: {{zone_match}}
+          ___Notify devices: {{notify_names}}
+          ___Downloader root: {{root_dir}}
+          ___Downloader sub: {{sub_dir}}
+          ___Thumb url {{thumb}}
+          ___Snapshot url {{image}}
+          ___Clip url {{video}}
+          ___GIF url {{gif}}___'
   - alias: Event is new or update Do LLM image analysis and send notification
     if:
       - condition: trigger
