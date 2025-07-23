@@ -1035,7 +1035,7 @@ variables:
         {% endif %} 
         {% endfor %} 
         {{ ns.device_names }}
-  before_zones: '{{ event[''before''][''dat'a'][''zones''] | lower | default([]) }}'
+  before_zones: '{{ event[''before''][''data''][''zones''] | lower | default([]) }}'
   after_zones: '{{ event[''after''][''data''][''zones''] | lower | default([]) }}'
   zone_entered: >-
     {{ zone_names | length == 0 or ((zone_names | select(''in'', (before_zones + after_zones)) |list |length) > 0) }}
