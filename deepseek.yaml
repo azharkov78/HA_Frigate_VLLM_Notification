@@ -661,12 +661,12 @@ triggers:
   - trigger: mqtt
     topic: '{{frigate_topic}}
     payload: new
-    value_template: '{{value_json['type']}}'
+    value_template: '{{value_json[''type'']}}'
     id: New event
   - trigger: mqtt
     topic: '{{frigate_topic}}'
     payload: end
-    value_template: '{{value_json['type']}}'
+    value_template: '{{value_json[''type'']}}'
     id: End event
 conditions:
   - condition: template
