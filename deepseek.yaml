@@ -165,7 +165,7 @@ blueprint:
         model_image:
           name: AI Model
           description: AI Model
-          default: gemini-2.0-flash
+          default: gemini-2.5-flash-lite
           selector:
             select:
               options:
@@ -183,6 +183,7 @@ blueprint:
               - gemini-2.0-flash-lite
               - gemini-2.5-pro
               - gemini-2.5-flash
+              - gemini-2.5-flash-lite
               - llama-3.2-90b-vision-preview
               - llama-3.2-11b-vision-preview
               - Llama-4-Scout-17B-16E-Instruct-FP8
@@ -201,7 +202,7 @@ blueprint:
         model_clip:
           name: AI Model
           description: AI Model
-          default: gemini-2.0-flash
+          default: gemini-2.5-flash-lite
           selector:
             select:
               options:
@@ -219,10 +220,13 @@ blueprint:
               - gemini-2.0-flash-lite
               - gemini-2.5-pro
               - gemini-2.5-flash
+              - gemini-2.5-flash-lite
               - llama-3.2-90b-vision-preview
               - llama-3.2-11b-vision-preview
               - Llama-4-Scout-17B-16E-Instruct-FP8
               - Llama-4-Maverick-17B-128E-Instruct-FP8
+              - meta-llama/llama-4-maverick-17b-128e-instruct
+              - meta-llama/llama-4-scout-17b-16e-instruct
               multiple: false
               custom_value: true
               sort: false
