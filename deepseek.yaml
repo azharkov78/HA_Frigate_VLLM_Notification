@@ -761,7 +761,7 @@ actions:
               - alias: If file exists run LLM Image Analyzer and send notification
                 if:
                   - condition: template
-                    value_template: '{{ wait.trigger.id == 'image_exists' }}'
+                    value_template: '{{ wait.trigger.id == ''image_exists'' }}'
                 then:
                   - delay:
                       hours: 0
