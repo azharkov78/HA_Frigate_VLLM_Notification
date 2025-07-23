@@ -587,7 +587,7 @@ blueprint:
               - label: View Snapshot
                 value: '{{image}}'
               - label: View Clip
-                value: "'{{video}}'
+                value: '{{video}}'
               - label: View Thumbnail
                 value: '{{thumb}}'
               - label: View Snapshot with bounding box
