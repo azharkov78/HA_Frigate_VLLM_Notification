@@ -894,76 +894,76 @@ actions:
                     then:
                       - action: llmvision.video_analyzer
                         continue_on_error: true
-                            metadata: {}
-                            data:
-                              provider: !input provider_clip
-                              model: !input model_clip
-                              remember: !input use_remember2
-                              expose_images: !input expose_clip
-                              use_memory: !input use_memory2
-                              video_file: "{{video_local}}"
-                              max_frames: !input max_frames
-                              include_filename: false
-                              target_width: !input target_width2
-                              max_tokens: !input tokens2
-                              generate_title: "{{gen_title2}}"
-                              message: >-
-                                {% if objects[0] == 'car' %}
-                                  {{ prompt_video_car }}
-                                {% elif objects[0] == 'person' %}
-                                  {{ prompt_video_person }}
-                                {% elif objects[0] == 'cat' %}
-                                  {{ prompt_video_cat }}
-                                {% elif objects[0] == 'dog' %}
-                                  {{ prompt_video_dog }}
-                                {% elif objects[0] == 'bird' %}
-                                  {{ prompt_video_bird }}
-                                {% else %}
-                                  {{ prompt_video_default }}
-                                {% endif %}
-                            response_variable: response
-                          - delay:
-                              hours: 0
-                              minutes: 0
-                              seconds: 1
-                              milliseconds: 0
-                          - alias: Update notification to notify devices
-                            continue_on_error: true
-                            repeat:
-                              for_each: "{{notify_names}}"
-                              sequence:
-                                - action: notify.{{ repeat.item }}
-                                  data:
-                                    title: "{{response.title if gen_title2 else title_clip}}"
-                                    message: "{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}"
-                                    data:
-                                      video: "{{gif}}"
-                                      image: "{{gif}}"
-                                      entity_id: "{{input_camera}}"
-                                      url: !input click_action2
-                                      clickAction: !input click_action2
-                                      group: "{{camera}}-frigate-notification"
-                                      tag: "{{id}}"
-                                      interruption-level: active
-                                      ttl: 0
-                                      priority: high
-                          - alias: Update notification in Telegram
-                            if:
-                              - condition: template
-                                value_template: "{{ chat_id | int > 0 }}"
-                            then:
-                              - action: telegram_bot.send_video
+                        metadata: {}
+                        data:
+                          provider: !input provider_clip
+                          model: !input model_clip
+                          remember: !input use_remember2
+                          expose_images: !input expose_clip
+                          use_memory: !input use_memory2
+                          video_file: "{{video_local}}"
+                          max_frames: !input max_frames
+                          include_filename: false
+                          target_width: !input target_width2
+                          max_tokens: !input tokens2
+                          generate_title: "{{gen_title2}}"
+                          message: >-
+                            {% if objects[0] == 'car' %}
+                              {{ prompt_video_car }}
+                            {% elif objects[0] == 'person' %}
+                              {{ prompt_video_person }}
+                            {% elif objects[0] == 'cat' %}
+                              {{ prompt_video_cat }}
+                            {% elif objects[0] == 'dog' %}
+                              {{ prompt_video_dog }}
+                            {% elif objects[0] == 'bird' %}
+                              {{ prompt_video_bird }}
+                            {% else %}
+                              {{ prompt_video_default }}
+                            {% endif %}
+                        response_variable: response
+                      - delay:
+                          hours: 0
+                          minutes: 0
+                          seconds: 1
+                          milliseconds: 0
+                      - alias: Update notification to notify devices
+                        continue_on_error: true
+                        repeat:
+                          for_each: "{{notify_names}}"
+                          sequence:
+                            - action: notify.{{ repeat.item }}
+                              data:
+                                title: "{{response.title if gen_title2 else title_clip}}"
+                                message: "{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}"
                                 data:
-                                  caption:  "{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}"
-                                  target: "{{in_telegram_chat_id}}"
-                                  disable_notification: false
-                                  url: "{{host}}{{video_30sec}}"
-                          - delay:
-                              hours: 0
-                              minutes: !input cooldown
-                              seconds: 0
-                              milliseconds: 0
-                            alias: Cooldown
+                                  video: "{{gif}}"
+                                  image: "{{gif}}"
+                                  entity_id: "{{input_camera}}"
+                                  url: !input click_action2
+                                  clickAction: !input click_action2
+                                  group: "{{camera}}-frigate-notification"
+                                  tag: "{{id}}"
+                                  interruption-level: active
+                                  ttl: 0
+                                  priority: high
+                      - alias: Update notification in Telegram
+                        if:
+                          - condition: template
+                            value_template: "{{ chat_id | int > 0 }}"
+                        then:
+                          - action: telegram_bot.send_video
+                            data:
+                              caption:  "{{ response.response_text if response.response_text is defined and response.response_text | trim != '' else title }}"
+                              target: "{{in_telegram_chat_id}}"
+                              disable_notification: false
+                              url: "{{host}}{{video_30sec}}"
+                      - delay:
+                          hours: 0
+                          minutes: !input cooldown
+                          seconds: 0
+                          milliseconds: 0
+                        alias: Cooldown
             until:
               - condition: template
                 value_template: "{{wait.trigger.id == 'clip_exists' or repeat.index == 2}}"
