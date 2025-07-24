@@ -380,6 +380,12 @@ blueprint:
             text:
               multiline: false
               multiple: false
+        in_use_llm_video:
+          name: LLM Vision Snapshot
+          description: Use LLM Vision for intial clips analysis. If off then the custom message above will be used to generate the notification.
+          default: false
+          selector:
+            boolean: {}
         prompt_video_car:
           name: Prompt for Video - Car
           description: Промпт для анализа видео с автомобилем.
@@ -882,6 +888,10 @@ actions:
                   - condition: template
                     value_template: "{{wait.trigger.id == 'clip_exists'}}"
                 then:
+                  - if:
+                      - condition: template
+                        value_template: "{{use_llm_video}}"
+                    then:
                   - action: llmvision.video_analyzer
                     continue_on_error: true
                     metadata: {}
@@ -972,6 +982,7 @@ variables:
   downloader_sub: !input in_downloader_sub
   notify_devices: !input in_notify_devices
   use_llm_image: !input in_use_llm_image
+  use_llm_video: !input in_use_llm_video
   gen_title: !input in_gen_title
   gen_title2: !input in_gen_title2
   event: "{{ trigger.payload_json }}"
