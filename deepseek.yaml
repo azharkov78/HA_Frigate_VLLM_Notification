@@ -382,7 +382,7 @@ blueprint:
               multiple: false
         in_use_llm_video:
           name: LLM Vision Clips
-          description: Use LLM Vision for intial clips analysis. If off then the custom message above will be used to generate the notification.
+          description: Use LLM Vision for intial clips analysis. If off then the custom message above will be used to generate the notification. This disable also clips notify 
           default: false
           selector:
             boolean: {}
